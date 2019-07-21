@@ -54,7 +54,9 @@ or use `tail -f` which follows the file being updated. lines added to the file w
     tail -f stderrr.txt
 ## using pipes
 There is an example for using pipe: a linux one-liner to take a fasta file and looks for non-nucleotide characters.
+
     grep -v "^>" file .fasta | grep --colour -i "[^ATCG]"
+
   - first remove header line
   - then print lines that doesnot match A, T, C or G
   - colour: print the matching in colour
