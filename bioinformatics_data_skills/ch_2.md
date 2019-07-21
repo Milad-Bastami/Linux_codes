@@ -7,6 +7,7 @@
     - [0-9]  alphanumeric range
 
 **examples:**
+
     - ls zmays[AB]_R1.fastq
     - ls zmays*
     - ls zmays?_R1.fastq
@@ -16,7 +17,7 @@ expand the comma separated values in curle braces. There should be o space betwe
 
        mkdir -p zmays/{data/seqs,analysis/scripts}
 
-## Pandoc: convert between formats: *markdown to HTML
+## Pandoc: convert between formats: *markdown to HTML*
 
-  sudo apt-get install pandoc
-  pandoc --from markdown --to html README.md > README.html
+    sudo apt-get install pandoc
+    pandoc --from markdown --to html README.md > README.html
