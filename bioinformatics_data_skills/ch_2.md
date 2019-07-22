@@ -42,6 +42,9 @@ Data streaming or text streaming: is a pylosophy in unix and allows us to handle
   - l: listing
   - r reverse order
   - t: order by time
+  - a: list all (including hidden ones)
+  - h: human readable sizes (1k, 1M, ...)
+  - `ls -ltrha` is commonly used
 ### redirectong both std out & std err: logfiles
 file1 exist and file2 doesnot exists (producing error)
     ls -l file1 file2 >listing 2>listing.err
@@ -127,4 +130,13 @@ false || echo "first cmd was success" # return the message
 **to run command sequentially use`;`**
 This is irrespective of the exit status.
 
-  false; true; false; echo "none of previous mattered"
+    false; true; false; echo "none of previous mattered"
+
+## Command substitution `$(CMD)`
+Allows to run a command inline and return the output as string and use this string in another command.
+
+    echo "There are $(grep -c "^>" input.fasta) in my FASTA file"
+
+This will make directories with current date. +%F is a standard and usefull format (2015-04-13). When directories are sorted by name using `ls -l`, directories are also sorted chronologically.
+
+    mkdir results-$(date +%F)
