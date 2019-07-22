@@ -116,7 +116,7 @@ The process is then non-recoverable. Other usefull process management commands `
  - `true` would return exit success
  - `false` would return exit fail
 
-```
+```Shell
 program1 input > intermediate.txt && program2 intermediate.txt > results.txt
 program1 input > intermediate.txt || echo "warninng: an error occured"
 true; echo $?  # return 0
