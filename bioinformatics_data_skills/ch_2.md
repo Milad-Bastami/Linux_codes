@@ -21,7 +21,7 @@ expand the comma separated values in curle braces. There should be o space betwe
 
     sudo apt-get install pandoc
     pandoc --from markdown --to html README.md > README.html
-
+*→*→*→
 # Chapter 3: Remedial Unix shell
 You may try to use **zsh** which more advance and contain atucomplete that comes handy in bioinformatics.
 ## Streams and Redirection
@@ -101,30 +101,28 @@ we need to **suspend** or pause the proccess using `CTRL + z` and then put it to
 ### kill a foregrounded process using `CTRL+C`
 The process is then non-recoverable. Other usefull process management commands `top; ps, kill`
 
-### Exit status
+## Exit status
 **exit status 0**: command was successfully ran. **nonzero exit status:** command failed. Not all programs handle errors correctly. you should never trust your tools! It is possible that a command return an error and also a zero exit status.To cjeck the exit status of the last command use shell variable `$?`
 
     program1 input.txt > output.text
     echo $?
     0
 **operators that implement exit status:**
-- `&&` will run the next command only if the previous command return a **zero exit** status (secessful)
-- `||` will run the next command onlt if the previous command return a **non-zero exit** status (failure)
-- `true` would return exit success
-- `false` would return exit fail
+ - `&&` will run the next command only if the previous command return a **zero exit** status (secessful)
+ - `||` will run the next command onlt if the previous command return a **non-zero exit** status (failure)
+ - `true` would return exit success
+ - `false` would return exit fail
 
-    program1 input > intermediate.txt && program2 intermediate.txt > results.txt
-    program1 input > intermediate.txt || echo "warninng: an error occured"
-    true; echo $?  # return 0
-    false; echo $? # return 1
-    true && echo "first cmd was suceess"  # return the message
-    true || "first command was suceess"   # return nothing
-    false && echo "first cmd was ok"      # return nothing
-    false || echo "first cmd was success" # return the message
+  program1 input > intermediate.txt && program2 intermediate.txt > results.txt
+  program1 input > intermediate.txt || echo "warninng: an error occured"
+  true; echo $?  # return 0
+  false; echo $? # return 1
+  true && echo "first cmd was suceess"  # return the message
+  true || "first command was suceess"   # return nothing
+  false && echo "first cmd was ok"      # return nothing
+  false || echo "first cmd was success" # return the message
 
-  ** to run command sequentially use `;`**
-  This is irrespective of the exit status.
+**to run command sequentially use `;`**
+This is irrespective of the exit status.
 
-      false; true; false; echo "none of previous mattered"
-
-  
+    false; true; false; echo "none of previous mattered"
