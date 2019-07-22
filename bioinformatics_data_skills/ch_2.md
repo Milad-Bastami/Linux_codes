@@ -113,14 +113,16 @@ The process is then non-recoverable. Other usefull process management commands `
  - `true` would return exit success
  - `false` would return exit fail
 
-  program1 input > intermediate.txt && program2 intermediate.txt > results.txt
-  program1 input > intermediate.txt || echo "warninng: an error occured"
-  true; echo $?  # return 0
-  false; echo $? # return 1
-  true && echo "first cmd was suceess"  # return the message
-  true || "first command was suceess"   # return nothing
-  false && echo "first cmd was ok"      # return nothing
-  false || echo "first cmd was success" # return the message
+```
+program1 input > intermediate.txt && program2 intermediate.txt > results.txt
+program1 input > intermediate.txt || echo "warninng: an error occured"
+true; echo $?  # return 0
+false; echo $? # return 1
+true && echo "first cmd was suceess"  # return the message
+true || "first command was suceess"   # return nothing
+false && echo "first cmd was ok"      # return nothing
+false || echo "first cmd was success" # return the message
+```
 
 **to run command sequentially use `;`**
 This is irrespective of the exit status.
