@@ -21,7 +21,7 @@ expand the comma separated values in curle braces. There should be o space betwe
 
     sudo apt-get install pandoc
     pandoc --from markdown --to html README.md > README.html
-*→*→*→
+
 # Chapter 3: Remedial Unix shell
 You may try to use **zsh** which more advance and contain atucomplete that comes handy in bioinformatics.
 ## Streams and Redirection
