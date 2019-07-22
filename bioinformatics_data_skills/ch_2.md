@@ -124,7 +124,7 @@ false && echo "first cmd was ok"      # return nothing
 false || echo "first cmd was success" # return the message
 ```
 
-**to run command sequentially use `;`**
+**to run command sequentially use`;`**
 This is irrespective of the exit status.
 
-    false; true; false; echo "none of previous mattered"
+  false; true; false; echo "none of previous mattered"
