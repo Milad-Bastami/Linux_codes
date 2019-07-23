@@ -140,3 +140,60 @@ Allows to run a command inline and return the output as string and use this stri
 This will make directories with current date. +%F is a standard and usefull format (2015-04-13). When directories are sorted by name using `ls -l`, directories are also sorted chronologically.
 
     mkdir results-$(date +%F)
+
+# Chapter 4: Working with remote machines (`SSH`)
+SSH: secure shell. You can connect to a host by `ssh hostname` or `ssh hostIP` address. If your local username differs with the remote username you should specify username in the `user@domain` format. The default port is 22. The `-p` flag defines the port number. The `-v` or `-vv` or `-vvv` flags define the verbose and it level.
+
+    ssh biocluster.myuniversity.edu
+    ssh -p 50432 cdarwin@biocluster.myuniversity.edu
+    ssh 192.169.273
+
+## SSH config file: store your frequent hosts
+An SSH config file may be created to store frequently connected hosts. Hosts in this file can be used with SSH and two usefull programs: `rsync` and `scp` (Chapter 6).
+You can easily creat the file at `~/.ssh/config`. Each entry takes the following form:
+
+```
+host bio-serv
+     HostName 192.168.237.42
+     User cdarwin
+     Port 50432
+```
+Then you can connect to host using `ssh bio-serv`. In terminal you can ask for the host name by `hostname` commaand. If you have multiple account at server check the current account by `whoami`.
+## SSH keys
+An alternative to entering passwd in each session in to use a public/private key pair (just like the one we used with git that was created with gpg program). Generate a ssh key using `ssh-keygen`:
+
+    ssh-keygen -b 2048
+
+  This creates a private akey at `~/.ssh/id-rsa` and public key at `~/.ssh/id-rsa.pub`. To use passwd less authentication:
+  1. first login to hist using passwd.
+  2. change to ~/.ssh
+  3. append the public key to remote `~./ssh/autherized_keys` by copying and pasting or using `ssh-copy-id
+  4. login again. if will ask for key's passwd.
+  5. `ssh-agent` which can be started with `eval ssh-agent` allows to use ssh keys without enteing it's password each time.
+  6. `ssh-add` will add the keys to ssh-agent
+  7. for the next login no passwd is reguired.
+## Maintaining long-running jobs with `nohup` and `tmux`
+In local machine, by closing terminal the proccess will be terminated by SIGHUP or hangup signal. The same is ture abot remote connections. When you get disconnected or network temporarily lost, the process will be lost.
+**Using `nohup` local terminal:**
+nohup will return the PID which is the only way to terminate the process in this case.
+
+```Shell
+nohup program1 input >output &
+```
+
+- **Using `Tmux` or GNU `Screen` for remote machines**
+*Terminal multiplexers* like Tmux (well developed) or Screen (popular alternative), create a session with multiple windows. Sessions are stable to hangeups and connection loses. You need to just relogin to host (ssh) and reattach the session to the current terminal. `~/.tmux.conf` is the configuration file of Tmux. Download a copy from book's github and paste it in the relevant directory it adds nice features to Tmux.
+
+- **working with `Tmux`:**
+With Tmux, you can create multiple Sessions (one for each project), each session can have multiple windows open (e.g. one for shell, one for text documentation). All these windows are within Tmux. It is not the same as tabs and multiple windows in regular terminals. You can start Tmux by creating nex sessions either in local machine or in remote host (after ssh to the remote).
+
+  tmux nex-session -s <SessionName>
+
+- **Interacting with Tmux:** though shortcuts, by default (Control+B) + (release Control B) + press another key. We changes the Ctrl+b to CTRL+a in configuration file.
+- **attaching detaching sessions:**
+    detach: (Control+a) + d # detach session
+    tmux list-sessions      # see the list of running  Sessions
+    tmux attach or tmux attach-session
+    tmux attach -t <SessionName>
+- **create a windowL:** (CTRL+a) + c
+- (CTRL+a) + ?: list of shortcuts
