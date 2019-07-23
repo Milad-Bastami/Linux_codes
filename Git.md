@@ -221,14 +221,20 @@ git searches among commits (revisions) from good to bad stepwise and gives the n
  6. *merge conflicts* arise when youu and your colleague make changes to the same section of a file
 
 ## SSH and github
-Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account.
+1. Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account. If you use sudo with git, you should also use sudo to generate the keys.
 
-    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+    sudo ssh-keygen -t rsa -b 4096 -C "mi.bastami@live.com"
     eval "$(ssh-agent -s)"
-    ssh-add ~/.ssh/id_rsa
+    sudo ssh-add /root/.ssh/id_rsa
 
-Then test your connection:
+2. Then test your connection:
 
     ssh -T git@github.com
 
-To be continued
+3. Change your remote's URL from HTTPS to SSH with the git remote set-url command. Remotes URLs should be based on git user not https.
+    git remote set-url origin git@github.com:USERNAME/REPOSITORY.git
+    git remote set-url origin git@github.com:Bastami/Linux-tips.git
+
+To reverse the change use:
+
+    git remote set-url origin https://github.com/USERNAME/REPOSITORY.git
