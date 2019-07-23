@@ -221,20 +221,25 @@ git searches among commits (revisions) from good to bad stepwise and gives the n
  6. *merge conflicts* arise when youu and your colleague make changes to the same section of a file
 
 ## SSH and github
-1. Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account. If you use sudo with git, you should also use sudo to generate the keys.
+1. Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account. If you use sudo with git, you should also use sudo to generate the keys. But it would be better to not use sudo for git or ssh. Therefore make sure to change the ownerhip of the repo directory in local machine using `sudo chown -hR milad /home/milad/Desktop/Linux-tips` and then you can use git and ssh without sudo.
 
-    sudo ssh-keygen -t rsa -b 4096 -C "mi.bastami@live.com"
+    sudo chown -hR milad /home/milad/Desktop/Linux-tips
+    ssh-keygen -t rsa -b 4096 -C "mi.bastami@live.com"
     eval "$(ssh-agent -s)"
-    sudo ssh-add /root/.ssh/id_rsa
+    ssh-add ~/.ssh/id_rsa
+    cat ~/.ssh/id-rsa
 
-2. Then test your connection:
+2. Change your remote's URL from HTTPS to SSH with the `git remote set-url` command. Remotes URLs should be based on git user not https to be able to use ssh for authentication.
 
-    ssh -T git@github.com
-
-3. Change your remote's URL from HTTPS to SSH with the git remote set-url command. Remotes URLs should be based on git user not https.
     git remote set-url origin git@github.com:USERNAME/REPOSITORY.git
     git remote set-url origin git@github.com:Bastami/Linux-tips.git
 
-To reverse the change use:
+    To reverse the change use:
 
-    git remote set-url origin https://github.com/USERNAME/REPOSITORY.git
+        git remote set-url origin https://github.com/USERNAME/REPOSITORY.git
+
+3. Then test your connection:
+
+        ssh -T git@github.com
+
+4. You are now able to use `git push origin master` to push your changes without authentication.
