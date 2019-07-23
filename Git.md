@@ -220,7 +220,7 @@ git searches among commits (revisions) from good to bad stepwise and gives the n
  5. You can get updated with his commits by pulling changes
  6. *merge conflicts* arise when youu and your colleague make changes to the same section of a file
 
-## SSH and github
+# SSH and github
 1. Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account. If you use sudo with git, you should also use sudo to generate the keys. But it would be better to not use sudo for git or ssh. Therefore make sure to change the ownerhip of the repo directory in local machine using `sudo chown -hR milad /home/milad/Desktop/Linux-tips` and then you can use git and ssh without sudo.
 
     sudo chown -hR milad /home/milad/Desktop/Linux-tips
