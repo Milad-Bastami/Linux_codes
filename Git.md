@@ -230,3 +230,5 @@ Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ss
 Then test your connection:
 
     ssh -T git@github.com
+
+To be continued
