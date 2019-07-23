@@ -4,22 +4,28 @@ These are tips and triks from a FaraDars course on Git.
 ```
 git config --global user.name "name"
 git config --global user.email "email"
+git config --global color.ui true
+git config --global core.editor emacs
 ```
 
 
-# init, add,  commit
+# init, add, commit, move or remove
 
 ## files are initially untracked > add them to stage > commit them
 
     git init
     git status
-    git log
+    git log   # see the commit history
 
+`git log` opens the commits history in the default `pager` which is usually program `more` or `less`. quite: `q`; fowrard: `space bar`; backward: `b`.
 ## add file/files to stage
+Git will only track the fils that we specifie, not all files in the directory (large data files, ..). A tracked file is a  file git knows about it, but am **stagged file** is a file not only being tracked but also it's changes being stagged to be included in the next commit. `git add` both tracks new files and stage the changes.
 
     git add <file>
-    git add -A  ## add all files
+    git add -A  ## add changes from all tracked and untracked files
     git add "*.html"
+    git add README data/README
+    git add .
 
 ## commit staged files
 
@@ -38,19 +44,56 @@ git config --global user.email "email"
 
     git diff HEAD
 
+diff compares the version of the file in the directory with the last staged changes. Therefore if all changes are staged, diff shows no difference.
+
+    git diff
+
+  In the diff output. `---a/file` indicate the current version (i.e the last commit) of a file and `+++b/file` indicates the version with changes. diff tries to break changes in `hunk`s (i.e. large changes blocks).
+
 ## see changes for staged files
+This will show sttaged changes relative to the last commit (i.e. shows what is going to be in the next commit)
 
     git diff --staged
 
-## remove changes from stage
+## Undoing a stage `reset`
 
     git reset <file>
+    echo "TODO: some changes" >> README.md
+    git status                  # the change is stagged
+    git reset HEAD README.md
+    git status                  # the change is unstagged
 
-# back to the last commit (i.e. `HEAD`) and removing recent changes
+  by default `git reset` will reset the **staging area** which is called **index**. So `git reset` resets the index. `HEAD` is a pointer to last commit in the current branch (which is by default the master).
+
+## back to the last commit (i.e. `HEAD`)
+it removes recent changes
+
     git checkout -- <file>
 
+## moving or removing tracked files
+we should use `git mv` or `git rm`. These command also stage the changes so that changes are ready to be commited
 
-# Branches
+    git mv README README.md
+    git commit -m "adding  extension to README"
+
+## Telling Git to ignore: `.gitignore` file
+when there are large number of files that should not be tracked (e.g. sequence files) and you dont want to see a long list of untracked file promt each time, you can creat a file `.gitignor` or edit it and add a line to it the following line `data/seqs/*.fastq`. Then add and commit this file.
+1. add a list of file to be ignored to `.gitignore`. e.g. `data/seqs/*.fastq`
+2. `git add .gitignore`
+3. `git commit -m "added .gitignore"`
+
+**Files that should be ignored:**
+- *large files:* sequence files or other data files
+- *intermediate files:* e..g. SAM or BAM files. it is better to store the command oor script that produce the data not the data itself.
+- *text editor temporary files*: these contain ~ or #. These should always be ignored. E.g. using wildcards in .gitignore: `*~` and `\#*\#`.
+- *temporary code files:*e.g. python temporary files like `overlap.pyc`
+
+**Global .gitignore:**
+universally ignore files across all repositories. GitHub has a usefull repository of candicate files to be excluded. we should add these files to `~/.gitignore_global` and then configure git to use it:
+
+    git config --global core.excludesfile ~/.gitignore_global
+
+# Branche
 
 ## give the list of branches
 
@@ -167,3 +210,23 @@ finding the bug by comparing commits. when a bug is present in the current state
     git bisect good <commit ID>   ## specifies the commit (here HEAD) without buggs
 
 git searches among commits (revisions) from good to bad stepwise and gives the name of a commit. you should check wether it is good or bad and specify the result of your considerations with (git bisect good or bad). After considering all revisions, bisect gives the  name and ID of the problematic commit.
+
+# Collaborating  with git: `git remote; git push; git pull`
+**remote repositories** are versions of our repository hosted remotely. To collaborate we need to configure our local repo to work with remote repo. You can collobrate through different *workflows*. A common easy workflow for collaboration is **shared central repositoory**:
+ 1. create a local repo and commit some changes
+ 2. push  repo and commits to shared central repo
+ 3. your  colleague clone the repo and make changes to his local version
+ 4. He then push his changes  to central repo
+ 5. You can get updated with his commits by pulling changes
+ 6. *merge conflicts* arise when youu and your colleague make changes to the same section of a file
+
+## SSH and github
+Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account.
+
+    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/id_rsa
+
+Then test your connection:
+
+    ssh -T git@github.com
