@@ -211,7 +211,8 @@ finding the bug by comparing commits. when a bug is present in the current state
 
 git searches among commits (revisions) from good to bad stepwise and gives the name of a commit. you should check wether it is good or bad and specify the result of your considerations with (git bisect good or bad). After considering all revisions, bisect gives the  name and ID of the problematic commit.
 
-# Collaborating  with git: `git remote; git push; git pull`
+# Collaborating  with git:
+## `git remote; git push; git pull`
 **remote repositories** are versions of our repository hosted remotely. To collaborate we need to configure our local repo to work with remote repo. You can collobrate through different *workflows*. A common easy workflow for collaboration is **shared central repositoory**:
  1. create a local repo and commit some changes
  2. push  repo and commits to shared central repo
