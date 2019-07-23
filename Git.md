@@ -16,6 +16,8 @@ git config --global core.editor emacs
     git init
     git status
     git log   # see the commit history
+    git log --prety=oneline --abbrev-commit  # nice formatings
+    git log -n2   # last two  commits
 
 `git log` opens the commits history in the default `pager` which is usually program `more` or `less`. quite: `q`; fowrard: `space bar`; backward: `b`.
 ## add file/files to stage
@@ -120,16 +122,17 @@ universally ignore files across all repositories. GitHub has a usefull repositor
 # Remote Repositories
 
 ## To clone a remote repository
-when you clone a repositoty it is on origin > master. We can change the default origin name. The remote repository (i.e. **origin**) is automatically linked to the local repository (i.e. **master**). Therefore you can run `sudo git push origin master` to push your changes.
+when you clone a repositoty it is on origin > master. We can change the default origin name. The remote repository (i.e. **origin**) is automatically linked to the local repository (i.e. **master**). Therefore you can run `sudo git push origin master` to push your changes. If local directory is not  specified, it will clone into the current directory.
 
-    git clone <repo URL>
+    git clone <repo URL> <local-directory>
 
 ## pushing your changes to the origin (reguires login)
 
     git push origin master
+    git push <remote-name> <branch>
 
 # pulling changes from origin (remote) to master (local): no login required
-
+It is a good practice to *commit changes before pulling*. git gives an error if a pull will change a file that has uncommited changes.
     git pull origin master
 
 ## to add a remote repository to current git
@@ -221,7 +224,7 @@ git searches among commits (revisions) from good to bad stepwise and gives the n
  5. You can get updated with his commits by pulling changes
  6. *merge conflicts* arise when youu and your colleague make changes to the same section of a file
 
-# SSH and github
+## SSH and github
 1. Create an ssh key, start the ssh-agent and add private to ssh-agent. Then add ssh key to GitHun account. If you use sudo with git, you should also use sudo to generate the keys. But it would be better to not use sudo for git or ssh. Therefore make sure to change the ownerhip of the repo directory in local machine using `sudo chown -hR milad /home/milad/Desktop/Linux-tips` and then you can use git and ssh without sudo.
 
     sudo chown -hR milad /home/milad/Desktop/Linux-tips
@@ -244,3 +247,20 @@ git searches among commits (revisions) from good to bad stepwise and gives the n
         ssh -T git@github.com
 
 4. You are now able to use `git push origin master` to push your changes without authentication.
+
+## Connecting with `git remote`
+To configure local  repository to connect with a remote repository:
+
+    git remote add origin git@github.com:username/repositoryName.git
+    git remote -v       # Get the list of remotes
+    git remote rm <remote name> # Remove a remotes
+
+## Merge conflicts
+The general strategy to resolve merge conflicts:
+1. use `git status` to find the conflicting file(s).
+2. open and edit the file.
+3. use `git add` to tell git that you resolved the conflict
+4. use `git status` to check that all changes are staged.
+5. `git push`
+
+When  you open the  file containing conflict, `<<<<<HEAD` indicates the start of our version. `=====` indicates the end of our HEAD and start of the collaborators changes. `>>>>> sdf..` indicates the end of collaborator changes and *the different conflicting chunk*. There may be more than one chunk.
