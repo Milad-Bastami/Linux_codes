@@ -265,3 +265,17 @@ The general strategy to resolve merge conflicts:
 5. `git push`
 
 When  you open the  file containing conflict, `<<<<<HEAD` indicates the start of our version. `=====` indicates the end of our HEAD and start of the collaborators changes. `>>>>> sdf..` indicates the end of collaborator changes and *the different conflicting chunk*. There may be more than one chunk.
+Resolving merge conflicts accross multiple files may damage the code and prevent proper running. Any change need to be sanity checked after pulling and before resolving all changes. `merge  tools` like `meld` and `kdiff` can be used for side by side vizualization of the differences for more complicated merge conflicts.
+
+## More GitHub workflows: `forking` and `pull request`
+forking: creating a copy of someone else repository in you repository and cloning it to your local machine, making changes and making a pull request. Commits are monitors by leadeer and if appropriate incorporated into main repository.
+
+# working with past Commits
+## `git checkout`: getting file from the past
+- `git checkout -- <file>`: cheking out a file  to the HEAD (i.e. last commit) and erasing all uncommited changes. `--` indicates we are cheking out a file not a branch.
+- `git log --pretty=oneline --abbrev-commit -n 3` and checkout to a specific commit by `git checkout <commitID> -- <file>`
+
+## `git stash`: Stashing you  changes
+Stashing is a way of storing changes outside of commits history. Stashing is similar to checkingout with a difference that the messy changes we made to a repository can be stored and then restores the repository to HEAD. This is usefull whne you want to `pull` some changes or `branching`, but you recently added changes are not yet ready to be commited first. When we stash our working directory, the directory sets at the state of the last commit and is thefore clean. If frequently used, subcommands of slash may be useful: e.g. `git stash list` or `git stash apply`
+1. `git stash`: stashes the working directory
+2. `git stash pop`: reapply the changes.
