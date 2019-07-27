@@ -18,6 +18,7 @@ git config --global core.editor emacs
     git log   # see the commit history
     git log --prety=oneline --abbrev-commit  # nice formatings
     git log -n2   # last two  commits
+    git log --graph #a text graph representation of commits
 
 `git log` opens the commits history in the default `pager` which is usually program `more` or `less`. quite: `q`; fowrard: `space bar`; backward: `b`.
 ## add file/files to stage
