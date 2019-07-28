@@ -99,24 +99,20 @@ universally ignore files across all repositories. GitHub has a usefull repositor
 
     git config --global core.excludesfile ~/.gitignore_global
 
-# Branche
+# Branch
+**Various purposes of branches:**
+- experiment with your projects. e.g. test a new variant caller.
+- devekope new features and bug fixes
+- Working collaboratively. a branch for each contributor to make specific changes.
+- Branching in git is visual (it does not copy the file into you account)
 
-## give the list of branches
-
-    git branch
-    git branch <branch name>
-
-## delete the branch
-
-    git branch -d <branchname>
-
-## swithch to a branch
-
-    git checkout <branchname>
-
-## merge a branch
-
-    git merge <branch name>
+## Working with branches
+- `git branch`: get the list of branches
+- `git branch <branch name>`: creates branch
+- `git branch -d <branchname>`: delete the branch
+- `git checkout <branchname>`: swithch to a branch
+- `git merge <branch name>`: merge a branch
+- `git checkout <branchName>`: check out to a branch
 
 ## remove the file from git & file system
 
@@ -167,7 +163,7 @@ Display all commits
 
     git tag -a v.1.8 -m"this is version 1.8, relesable" <tag ID>
 
-# list all tags containing "v"
+## list all tags containing "v"
 
     git tag -l 'v*'
 
@@ -282,3 +278,6 @@ forking: creating a copy of someone else repository in you repository and clonin
 Stashing is a way of storing changes outside of commits history. Stashing is similar to checkingout with a difference that the messy changes we made to a repository can be stored and then restores the repository to HEAD. This is usefull whne you want to `pull` some changes or `branching`, but you recently added changes are not yet ready to be commited first. When we stash our working directory, the directory sets at the state of the last commit and is thefore clean. If frequently used, subcommands of slash may be useful: e.g. `git stash list` or `git stash apply`
 1. `git stash`: stashes the working directory
 2. `git stash pop`: reapply the changes.
+
+## undoing and editing  Commits: `git commit --amend`
+`git commit --amend` may be used if you made a mistake in a commits message or mistakanly commited some changes. This command will open the message of the last commit in the editor to edit it. The file itself may be changes, staged and then amended. Moreover, `git revert` or `git reset` can be used to undo a commit.
