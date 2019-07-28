@@ -42,21 +42,24 @@ Git will only track the fils that we specifie, not all files in the directory (l
 
     git commit -m "message" <file>
 
-## difference for last commit
-`diff` is a bash command (`diff -u`) and `HEAD` indicates the last commit. The following command shows differences between the last commit & current change:
-
-    git diff HEAD
-
-diff compares the version of the file in the directory with the last staged changes. Therefore if all changes are staged, diff shows no difference.
-
-    git diff
-
-  In the diff output. `---a/file` indicate the current version (i.e the last commit) of a file and `+++b/file` indicates the version with changes. diff tries to break changes in `hunk`s (i.e. large changes blocks).
+## `git diff` difference between commits and files
+`diff` is a bash command (`diff -u`) and `HEAD` indicates the last commit.
+- `git diff HEAD`: shows differences of working directory between the last commit (HEAD) & current change.
+- `git diff`: diff compares the version of the file in the directory with the last staged changes. Therefore if all changes are staged, diff shows no difference.
+- `git diff dafc75`: differences between last commit (HEAD) and specific commit (dafc75)
+- `git diff 46f078 269aa09 README.md`: diffs between two commit to a file.
+- `git diff HEAD~3 HEAD~2 README.md`: is equivalent to above command.
+- In the diff output, `---a/file` indicate the current version (i.e the last commit) of a file and `+++b/file` indicates the version with changes. diff tries to break changes in `hunk`s (i.e. large changes blocks).
 
 ## see changes for staged files
 This will show sttaged changes relative to the last commit (i.e. shows what is going to be in the next commit)
 
     git diff --staged
+## Refering to commits (specifying revisions):
+1. using the first 7 characters of Commits ID (SHA).
+2. Specifying revisions relative to HEAD:
+  1. `^` refers to the parent commit of a commit. `HEAD^`: parent of HEAD or one commit before HEAD. `HEAD^^: two commits before HEAD`. `HEAD^^^`
+  2. `HEAD~2` is equivalent to `HEAD^^`.
 
 ## Undoing a stage `reset`
 
