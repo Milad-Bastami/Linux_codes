@@ -19,6 +19,7 @@ git config --global core.editor emacs
     git log --prety=oneline --abbrev-commit  # nice formatings
     git log -n2   # last two  commits
     git log --graph #a text graph representation of commits
+    git log --pretty=oneline --abbrev-commit --branches --graph #will display text graph of commit to all branches.
 
 `git log` opens the commits history in the default `pager` which is usually program `more` or `less`. quite: `q`; fowrard: `space bar`; backward: `b`.
 ## add file/files to stage
@@ -29,6 +30,7 @@ Git will only track the fils that we specifie, not all files in the directory (l
     git add "*.html"
     git add README data/README
     git add .
+    git rm <filename> ## remove fie from git and filesystem
 
 ## commit staged files
 
@@ -111,16 +113,21 @@ universally ignore files across all repositories. GitHub has a usefull repositor
 - `git branch <branch name>`: creates branch
 - `git branch -d <branchname>`: delete the branch
 - `git checkout <branchname>`: swithch to a branch
-- `git merge <branch name>`: merge a branch
+- `git merge <Otherbranch>`: merge otherbranch to current branch. First check out to current branch first run the command.
 - `git checkout <branchName>`: check out to a branch
+- `git log --pretty=oneline --abbrev-commit --branches --graph`: will display text graph of commit to all branches.
 
-## remove the file from git & file system
-
-    git rm <filename>
-
-
+## Remote branches
+We can use `git branch --all` to see also remote branches. Actually when we add a remte repo to a local repo, we created also creatted a remote branch for the local `master branch`. The remote branch for the local `master` branch is `remotes/origin/master`. To synchronize the local with the remote branch, we use `git pull`. `git pull` is composed of first `git fetch` and then `git merge`.
+When a colleague creates a local branch, named `new-methods` and commit some changes:
+1. He can push commits to remote  repository: `git push origin new-methods`
+2. We can fetch the *latest branches* from  the remote repo: `git fetch origin`
+3. This will add a remore repo to the  output of `git branch --all`
+4. To merge the remote branch to our local master: `git merge origin/new-methods` within master.
+5. To add some commits to the remote branch and work on it, we first creates a new branch that *starts* from remote branch: `git checkout -b new-methods origin/new-methods`. The `-b` flag leads to creating and swithching to a branch simultaneously.
+6. Then we can commit changes and usse `git push` or `git pull` within this new branch *without any arguments*.
+7. When you and your decided to mergethe branch with master, you can delete the local branch using  `git branch -d new-methods` and remove remote branch using `git push origin :new-methods`
 # Remote Repositories
-
 ## To clone a remote repository
 when you clone a repositoty it is on origin > master. We can change the default origin name. The remote repository (i.e. **origin**) is automatically linked to the local repository (i.e. **master**). Therefore you can run `sudo git push origin master` to push your changes. If local directory is not  specified, it will clone into the current directory.
 
