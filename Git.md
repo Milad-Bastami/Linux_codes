@@ -19,6 +19,7 @@ git config --global core.editor emacs
     git log --prety=oneline --abbrev-commit  # nice formatings
     git log -n2   # last two  commits
     git log --graph #a text graph representation of commits
+    git log --pretty=oneline --abbrev-commit --branches --graph #will display text graph of commit to all branches.
 
 `git log` opens the commits history in the default `pager` which is usually program `more` or `less`. quite: `q`; fowrard: `space bar`; backward: `b`.
 ## add file/files to stage
@@ -29,6 +30,7 @@ Git will only track the fils that we specifie, not all files in the directory (l
     git add "*.html"
     git add README data/README
     git add .
+    git rm <filename> ## remove fie from git and filesystem
 
 ## commit staged files
 
@@ -99,32 +101,33 @@ universally ignore files across all repositories. GitHub has a usefull repositor
 
     git config --global core.excludesfile ~/.gitignore_global
 
-# Branche
+# Branch
+**Various purposes of branches:**
+- experiment with your projects. e.g. test a new variant caller.
+- devekope new features and bug fixes
+- Working collaboratively. a branch for each contributor to make specific changes.
+- Branching in git is visual (it does not copy the file into you account)
 
-## give the list of branches
+## Working with branches
+- `git branch`: get the list of branches
+- `git branch <branch name>`: creates branch
+- `git branch -d <branchname>`: delete the branch
+- `git checkout <branchname>`: swithch to a branch
+- `git merge <Otherbranch>`: merge otherbranch to current branch. First check out to current branch first run the command.
+- `git checkout <branchName>`: check out to a branch
+- `git log --pretty=oneline --abbrev-commit --branches --graph`: will display text graph of commit to all branches.
 
-    git branch
-    git branch <branch name>
-
-## delete the branch
-
-    git branch -d <branchname>
-
-## swithch to a branch
-
-    git checkout <branchname>
-
-## merge a branch
-
-    git merge <branch name>
-
-## remove the file from git & file system
-
-    git rm <filename>
-
-
+## Remote branches
+We can use `git branch --all` to see also remote branches. Actually when we add a remte repo to a local repo, we created also creatted a remote branch for the local `master branch`. The remote branch for the local `master` branch is `remotes/origin/master`. To synchronize the local with the remote branch, we use `git pull`. `git pull` is composed of first `git fetch` and then `git merge`.
+When a colleague creates a local branch, named `new-methods` and commit some changes:
+1. He can push commits to remote  repository: `git push origin new-methods`
+2. We can fetch the *latest branches* from  the remote repo: `git fetch origin`
+3. This will add a remore repo to the  output of `git branch --all`
+4. To merge the remote branch to our local master: `git merge origin/new-methods` within master.
+5. To add some commits to the remote branch and work on it, we first creates a new branch that *starts* from remote branch: `git checkout -b new-methods origin/new-methods`. The `-b` flag leads to creating and swithching to a branch simultaneously.
+6. Then we can commit changes and usse `git push` or `git pull` within this new branch *without any arguments*.
+7. When you and your decided to mergethe branch with master, you can delete the local branch using  `git branch -d new-methods` and remove remote branch using `git push origin :new-methods`
 # Remote Repositories
-
 ## To clone a remote repository
 when you clone a repositoty it is on origin > master. We can change the default origin name. The remote repository (i.e. **origin**) is automatically linked to the local repository (i.e. **master**). Therefore you can run `sudo git push origin master` to push your changes. If local directory is not  specified, it will clone into the current directory.
 
@@ -167,7 +170,7 @@ Display all commits
 
     git tag -a v.1.8 -m"this is version 1.8, relesable" <tag ID>
 
-# list all tags containing "v"
+## list all tags containing "v"
 
     git tag -l 'v*'
 
@@ -282,3 +285,6 @@ forking: creating a copy of someone else repository in you repository and clonin
 Stashing is a way of storing changes outside of commits history. Stashing is similar to checkingout with a difference that the messy changes we made to a repository can be stored and then restores the repository to HEAD. This is usefull whne you want to `pull` some changes or `branching`, but you recently added changes are not yet ready to be commited first. When we stash our working directory, the directory sets at the state of the last commit and is thefore clean. If frequently used, subcommands of slash may be useful: e.g. `git stash list` or `git stash apply`
 1. `git stash`: stashes the working directory
 2. `git stash pop`: reapply the changes.
+
+## undoing and editing  Commits: `git commit --amend`
+`git commit --amend` may be used if you made a mistake in a commits message or mistakanly commited some changes. This command will open the message of the last commit in the editor to edit it. The file itself may be changes, staged and then amended. Moreover, `git revert` or `git reset` can be used to undo a commit.
