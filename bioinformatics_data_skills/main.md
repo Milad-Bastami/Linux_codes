@@ -195,5 +195,78 @@ With Tmux, you can create multiple Sessions (one for each project), each session
     tmux list-sessions      # see the list of running  Sessions
     tmux attach or tmux attach-session
     tmux attach -t <SessionName>
-- **create a windowL:** (CTRL+a) + c
+- **create a window:** (CTRL+a) + c
 - (CTRL+a) + ?: list of shortcuts
+
+# Chapter-6: Bioinformatics data
+## Downloading Data
+### `wget`: downloading Data
+- For quickly downloading files.
+- works for both `ftp` and `http`.
+- set username with `--user=` and passwd with `--ask-password`
+- `-r` or `--recruisive`: downloading `recruisively`
+  - `-l` or `--level`: default:5.
+  - we should set ome limits.
+  -`wget --accept "*.gtf --no-directories --recruisive --no-parent <url>"`
+  `--no-parent`: prevent downloadinghigher directories
+  `--accept` or `-A`: download specific filenames.
+
+### `curl`
+- For quickly downloading files.
+- Capable of using more protocols: `sftp; SCP`.
+- by default, prints to std out. Either redirect the output or use `-o <filename>`.
+- If `-o` is specified without filename argument, the remote filename will be used.
+- `-L` or `--location`: **Can follow page redirects**.
+- is implemented in `RCurl` and `pycurl`
+
+### `Rsync` and `Secure Copy` (SCP)
+- `Rsynch` is appropriate for hevy-duty tasks. e.g. **synchronizing** entire large directory.
+- When a copy in already exist or partially exists, Rsynch will download only **differences between file version** in a compressed form: its **faster**.
+- Rsynch has an **Archive option** which preserves file attributes (owner, modifications, timestamps, permissions)), making it deall for **network backup**.
+- `rsynch source destination`. Either dource or destination can be a remote host in a format `user@host:directory/to/files`
+- `rsynch -avz -e ssh zea_mays/data/ 192.168.237.42:/home/data`
+  - `-a`: archiving; `-v`: verbose; `-z`: compression;
+  - `-e ssh`: we rae going to connect through ssh. if ssh host aliases were used, this could be replaced by host's aliase.
+  - `data/` in source means copy contents, but `data` means copy entire directory (directory itself & its contents)
+- rsynch transfers files if they **do not exist or changed**. Use `rsynch` again to check if worked fine.
+- Use **exit status** in scripts to check for problems in transferring files.
+
+**Secure Copy (scp)**:
+It is used in cases where we need to sust quickly copy a file over ssh. We can use scp using `scp source destination`. Destination is the same as what was used for rsynch.
+## Data integrity
+Checksum is a compresseed summary of the data and will change if even a bit of data changes. Using `checksums` for evaluating data integrity:
+1. To verify file transfered correctly and is not changes or corrupted.
+2. To keep track of data versions.
+3. Reproducibility: associate a particular analysis to a specific data with checksums.
+**SHA and MD5 Checksums**
+- `SHA-1` is newer but `md5` is more common.
+- `shasum`program or `sha1sum` for SHA-1. `md5sum` for MD5 (in some servers `chsum` or `sum` programs).
+- `shasum *.fastq >chechsum.sha` create checksum file for all fastq file.
+- `shasum -c checksum.sha` to validate checksums. Returns a nonzero exit status if any file fail.
+## Looking at differences between data: `diff`
+- `diff -u gene-1.bed gene-2.bed`
+- the `-u` option enables unified format for output wich gives more context relative to diff's default output.
+- Hunks (i..e changed chunks) are seperated with `@@ .. .. @@`
+- changes (- or +) are relative to the current file (i.e. ---).
+- The output of diff can be redirected to a file, **patch file**. Patch files are instructions on how to update plain text files and can be used with `patch` unix program to apply changes.
+- diff can be computationally expensive on large datasets.
+## Compressing Data
+- `gzip` and `bzip2` are two most common compression program.
+- `gzip` is faster, `bzip2` compress more.
+- `gzip` for most bioinformatics jobs, `bzip2` for long-term storages.
+**Some usefull applications are:**
+- `trimmer in.fastq.gz | gzip > out.fastq`
+- `gzip in.fastq`: compress file  in place (replacing the uncompressed file)
+- `gunzip in.fastq.gz`: uncompress file  in place (replacing the compressed file)
+- `gzip -c in.fastq > infastq.gz`: compress file to std out
+- `gunzip -c in.fastq.gz >in.fastq`: uncompress file to std out
+- `gzip -c in2.fastq >> in.fastq.gz`: compressing and appending to an existing gz file. Files are **Concatanated** and are no longer seperated.
+- `cat in.fastq in2.fastq | gzip >in.fastq.gz`: compressing multiple file together. Files are **Concatanated** and are no longer seperated.
+- use `tar` for compressing multiple files and keep then seperated.
+- `tar -cvf in.fastq.tar in1.fastq in2.fastq`
+**An important advantage of gzip a nd bzip2 is that unix and bioinfo tools can work directly with compressed files.**
+- `zcat` instead of `cat`.
+- `zdiff` instead of `diff`
+- `zgrep` instead of `grep`
+- `zless` instead of `less`
+- If the program connot handle compressed files, use `zcat in.fastq.gz | program`.
