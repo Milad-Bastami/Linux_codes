@@ -85,7 +85,7 @@ we should use `git mv` or `git rm`. These command also stage the changes so that
     git commit -m "adding  extension to README"
 
 ## Telling Git to ignore: `.gitignore` file
-when there are large number of files that should not be tracked (e.g. sequence files) and you dont want to see a long list of untracked file promt each time, you can creat a file `.gitignor` or edit it and add a line to it the following line `data/seqs/*.fastq`. Then add and commit this file.
+when there are large number of files that should not be tracked (e.g. sequence files) and you dont want to see a long list of untracked file promt each time, you can creat a file `.gitignore` or edit it and add a line to it the following line `data/seqs/*.fastq`. Then add and commit this file.
 1. add a list of file to be ignored to `.gitignore`. e.g. `data/seqs/*.fastq`
 2. `git add .gitignore`
 3. `git commit -m "added .gitignore"`
