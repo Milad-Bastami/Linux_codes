@@ -405,6 +405,7 @@ Two commonly used character encoding schemes: **ASCII** and **UTF8**. ASCII uses
 - Both files should be first sorted on the column we want to join by.
 - `join -1 <file-1-field> -2 <file-2-field> file1 file2`
 - `join -1 1 -2 1 file1.sorted.bed file2.sorted.bed`
+- `join -j1 <(sort -k1b,1 file1.unsorted) <(sort -k1b,1 file2.unsorted)`: using **process substitution**: <(cmd)
 - `-a FILENUM`: print unpairable lines coming from file FILENUM, where FILENUM is 1 or 2, corresponding to FILE1 or FILE2. `join -1 1 -2 2 -a 1 file.1 file.2`: only includes unpaired lines from file 1; Use `-a 1 -a 2`: to include unpaired lines from both file (will mix lines from both files!!).
 - `join -j 1 file1  file2` is equivalent to `join -1 1 -2 1 file1 file2`
 - `-v FILENUM`: like -a FILENUM, but suppress joined output lines.
