@@ -1,4 +1,35 @@
-# Shell expansions
+<!-- TOC -->
+
+- [Shell expansions & string manupulations](#shell-expansions--string-manupulations)
+  - [parameter or variable expansions](#parameter-or-variable-expansions)
+  - [String manupulations with `expr`](#string-manupulations-with-expr)
+- [`read`](#read)
+  - [Syntax:](#syntax)
+  - [options:](#options)
+  - [Examples:](#examples)
+- [`test` command (`[]`)](#test-command-)
+  - [Syntax](#syntax)
+    - [File tests:](#file-tests)
+    - [String tests:](#string-tests)
+    - [Shell options and variables:](#shell-options-and-variables)
+    - [Simple logic (test if values are null):](#simple-logic-test-if-values-are-null)
+    - [Numerical comparisons:](#numerical-comparisons)
+  - [Options](#options)
+  - [examples](#examples)
+  - [Combine multiple test conditions](#combine-multiple-test-conditions)
+- [Parsing bash script options with getopts](#parsing-bash-script-options-with-getopts)
+  - [Shifting processed options](#shifting-processed-options)
+  - [Parsing options with arguments](#parsing-options-with-arguments)
+  - [An example](#an-example)
+- [`split` function](#split-function)
+- [`body() function in NGSeasy`](#body-function-in-ngseasy)
+- [bioawk](#bioawk)
+- [Parallel](#parallel)
+- [xargs](#xargs)
+
+<!-- /TOC -->
+
+# Shell expansions & string manupulations
 ## parameter or variable expansions
 - Basic form is `$a` or `${b}cd`
 - Set the **defalut value** of a variable: `test=${test:-0}`. Examples:
@@ -268,7 +299,7 @@ echo "${foo@Q}"
 'line1\nline2'
 ```
 
-### String manupulations with `expr`
+## String manupulations with `expr`
 - String length:
   ```shell
   echo `expr length $string`
@@ -286,20 +317,20 @@ echo "${foo@Q}"
   # c in position#3 matches before 1
   ```
 
-## `read`
+# `read`
 By default, read considers a newline character as the end of a line, but this can be changed using the `-d` option.
 After reading, the line is split into words according to the value of the special shell variable **IFS**, the internal field separator.
 To preserve white space at the beginning or the end of a line, it's common to specify `IFS=` (with no value) immediately before the read command. After reading is completed, the IFS returns to its previous value. **By default, the IFS value is "space, tab, or newline".**
 
 read assigns the first word it finds to name, the second word to name2, etc. If there are more words than names, all remaining words are assigned to the last name specified. If only a single name is specified, the entire line is assigned to that variable. If no name is specified, the input is stored in a variable named **REPLY**.
 
-**Syntax:**
+## Syntax:
 ```shell
 read [-ers] [-a array] [-d delim] [-i text] [-n nchars] [-N nchars]
      [-p prompt] [-t timeout] [-u fd] [name ...] [name2 ...]
 ```
 
-**options:**
+## options:
 
 - `-a array`	Store the words in an indexed array named array. Numbering of array elements starts at zero.
 - `-d delim`	Set the delimiter character to delim. This character signals the end of the line. If -d is not used, the default line delimiter is a newline.
@@ -313,7 +344,7 @@ read [-ers] [-a array] [-d delim] [-i text] [-n nchars] [-N nchars]
 - `-t timeout`	Time out, and return failure, if a complete line of input is not read within timeout seconds. If the timeout value is zero, read will not read any data, but returns success if input was available to read. If timeout is not specified, the value of the shell variable TMOUT is used instead, if it exists. The value of timeout can be a fractional number, e.g., 3.5.
 - `-u fd`	Read from the file descriptor fd instead of standard input. The file descriptor should be a small integer. For information about opening a custom file descriptor, see opening file descriptors in bash.
 
-**Examples:**
+## Examples:
 
 ```Shell
 while read; do echo "$REPLY"; done
@@ -363,7 +394,7 @@ while IFS= read -r -d $'\0' file; do
 done < <(find . -print0)
 ```
 
-The above commands are the "proper" way to use find and read together to process files. It's especially useful when you want to do something to a lot of files that have odd or unusual names. Let's take a look at specific parts of the above example:
+The above commands are **the "proper" way to use find and read together to process files**. It's especially useful when you want to do something to a lot of files that have odd or unusual names. Let's take a look at specific parts of the above example:
 
 `while IFS=`. IFS= (with nothing after the equals sign) sets the internal field separator to "no value". Spaces, tabs, and newlines are therefore considered part of a word, which preserves white space in the file names.
 Note that IFS= comes after while, ensuring that IFS is altered only inside the while loop. For instance, it won't affect find.
@@ -380,3 +411,209 @@ Enclosing the find command in <( ... ) performs process substitution: the output
 For every iteration of the while loop, read reads one word (a single file name) and puts that value into the variable file, which we specified as the last argument of the read command.
 
 When there are no more file names to read, read returns false, which triggers the end of the while loop, and the command sequence terminates.
+
+# `test` command (`[]`)
+test provides no output, but returns an exit status of 0 for "true" (test successful) and 1 for "false" (test failed).
+**Examples**
+```shell
+num=4; if (test $num -gt 5); then echo "yes"; else echo "no"; fi  # no
+file="/etc/passwd"; if [ -e $file ]; then echo "whew"; else echo "uh-oh"; fi
+```
+
+## Syntax
+### File tests:
+```shell
+test [-a] [-b] [-c] [-d] [-e] [-f] [-g] [-h] [-L] [-k] [-p] [-r] [-s] [-S]
+     [-u] [-w] [-x] [-O] [-G] [-N] [file]
+```
+
+```shell
+    test -t fd
+```
+
+```shell
+    test file1 {-nt | -ot | -ef} file2
+```
+
+### String tests:
+```shell
+test [-n | -z] string
+```
+
+```shell
+test string1 {= | != | < | >} string2
+```
+
+### Shell options and variables:
+```shell
+test -o option
+```
+
+```shell
+test {-v | -R} var
+```
+
+### Simple logic (test if values are null):
+```shell
+test [!] expr
+
+test expr1 {-a | -o} expr2
+```
+### Numerical comparisons:
+for integer values only; bash doesn't do floating point math
+
+```Shell
+test arg1 {-eq | -ne | -lt | -le | -gt | -ge} arg2
+```
+## Options
+
+- `a file`	Returns true if **file exists**. Does the same thing as -e. Both are included for compatibility reasons with legacy versions of Unix.
+- `b file`	Returns true if file is **"block-special"**. Block-special files are similar to regular files, but are stored on block devices — special areas on the storage device that are written or read one block (sector) at a time.
+- `c file`	Returns true if file is **"character-special."** Character-special files are written or read byte-by-byte (one character at a time), immediately, to a special device. For example, /dev/urandom is a character-special file.
+- `d file`	Returns true if file is a **directory**.
+- `e file`	Returns true if **file exists**. Does the same thing as -a. Both are included for compatibility reasons with legacy versions of Unix.
+- `f file`	Returns true if **file exists**, and is a regular file.
+- `g file`	Returns true if file has the setgid bit set.
+-`h file`	Returns true if file is a **symbolic link**. Does the same thing as **-L**. Both are included for compatibility reasons with legacy versions of Unix.
+- `-k file`	Returns true if file has its sticky bit set.
+- `-p file`	Returns true if the file is a named pipe, e.g., as created with the command mkfifo.
+- `-r file`	Returns true if file is readable by the user running test.
+- `-s file`	Returns true if **file exists, and is not empty**.
+- `-S file`	Returns true if file is a socket.
+- `-t fd`	Returns true if file descriptor fd is opened on a terminal.
+- `-u file`	Returns true if file has the setuid bit set.
+- `-w file`	Returns true if the user running test has **write permission to file**, i.e. make changes to it.
+- `-x file`	Returns true if file is **executable by the user** running test.
+- `-O file`	Returns true if file is **owned by the user** running test.
+- `-G file`	Returns true if file is **owned by the group** of the user running test.
+- `-N file`	Returns true if file was **modified** since the last time it was read.
+- `file1 -nt file2`	Returns true if file1 is **newer** (has a newer modification date/time) than file2.
+- `file1 -ot file2`	Returns true if file1 is **older** (has an older modification date/time) than file2.
+- `file1 -ef file2`	Returns true if file1 is a **hard link** to file2.
+- `test [-n] string` Returns true if **string is not empty**. Operates the same with or without -n.
+For example, if mystr="", then test "$mystr" and test -n "$mystr" would both be false. If mystr="Not empty", then test "$mystr" and test -n "$mystr" would both be true.
+- `-z string`	Returns true if string *string* is **empty**, i.e. "".
+- `string1 = string2`	Returns true if string1 and string2 are equal, i.e. contain the same characters.
+- `string1 != string2`	Returns true if string1 and string2 are not equal.
+- `string1 < string2`	Returns true if string1 sorts before string2 lexicographically, according to ASCII numbering, based on the first character of the string. For instance, test "Apple" < "Banana" is true, but test "Apple" < "banana" is false, because all lowercase letters have a lower ASCII number than their uppercase counterparts.
+
+  **Tip:** Enclose any variable names in double quotes to protect whitespace. Also, escape the less than symbol with a backslash to prevent bash from interpreting it as a redirection operator. For instance, use test "$str1" \< "$str2" instead of test $str1 < $str2. The latter command will try to read from a file whose name is the value of variable str2. For more information, see redirection in bash.
+- `string1 > string2`	Returns true if string1 sorts after string2 lexicographically, according to the ASCII numbering. As noted above, use test "$str1" \> "$str2" instead of test $str1 > $str2. The latter command creates or overwrites a file whose name is the value of variable str2.
+- -`o option`	Returns true if the **shell option** opt is enabled.
+- `-v var`	Returns true if the **shell variable** var is set.
+- -`R var`	Returns true if the **shell variable** var is set, and is a name reference. (It's possible this refers to an indirect reference, as described in Parameter expansion in bash.)
+- `! expr`	Returns true if and only if the expression expr is null.
+- `expr1 -a expr2`	Returns true if expressions **expr1 and expr2 are both not null**.
+- `expr1 -o expr2`	Returns true if **either of the expressions expr1 or expr2 are not null**.
+- `arg1 -ne arg2`	true if argument arg1 is **not equal to** arg2.
+- `arg1 -lt arg2`	true if numeric value arg1 is **less than** arg2.
+- `arg1 -le arg2`	true if numeric value arg1 is **less than or equal** to arg2.
+- `arg1 -gt arg2`	true if numeric value arg1 is **greater than** arg2.
+- `arg1 -ge arg2`	true if numeric value arg1 is **greater than or equal** to arg2
+
+## examples
+
+```Shell
+if test false; then
+  echo "Test always returns true for only one argument, unless it is null.";
+fi
+# Test always returns true for only one argument, unless it is null.
+
+[ false ]; echo $? # 0
+[ true ]; echo $? # 0
+
+# works for files and directories
+test -e /sys; echo $?   # true if file or directory exists
+# for directories
+if test -d /home; then echo "/home is a directory"; fi
+# for regular files (i.e not directories)
+test -f /etc/shadow; echo $?   # true for regular files
+
+touch newfile; if [ -O newfile ]; then echo "I own newfile"; fi
+str=""; test -z "$str"; echo $?   # true if variable str is empty string ""
+str=""; test -n "$str"; echo $?   # true if variable str is not empty string ""
+str=""; test "$str"; echo $?      # same as above command; -n is optional
+str="Not empty"; test -z "$str"; echo $?
+```
+## Combine multiple test conditions
+
+```Shell
+[ $x -gt 5 ] && [ $x -lt 8 ] && [ $x -ne 6 ]
+[ $x -gt 5 ] || [ $x -lt 8 ]
+```
+
+```Shell
+[ $x -gt 5 -a $x -lt 8 ] # -a  for AND
+[ $x -gt 5 -o $x -lt 8 ] # -o for OR
+```
+
+```Shell
+[[ $x -gt 5 ]] && [[ $x -lt 8 ]] && [[ $x -ne 6 ]]
+
+[[ $x -gt 5 && $x -lt 8 && $x -ne 6 ]]
+```
+
+# Parsing bash script options with getopts
+This tutorial explains how to use the `getopts` built-in function to parse arguments and options to a bash script.
+The getopts function takes three parameters:
+1. The first is a specification of **which options are valid**, listed as a sequence of letters. For example, the string `'ht'` signifies that the options -h and -t are valid.
+2. The second argument to getopts is a **variable** that will be populated with the option or argument to be processed next. In the following loop, `opt` will hold the value of the current option that has been parsed by `getopts`.
+
+  ```shell
+  while getopts ":ht" opt; do
+    case ${opt} in
+      h ) # process option a
+        ;;
+      t ) # process option t
+        ;;
+      \? ) echo "Usage: cmd [-h] [-t]"
+      ;;
+    esac
+  done
+  ```
+  - if an invalid option is provided, the option variable is assigned the value `?`.
+  - Second, this behaviour is only true when you prepend the list of valid options with `:` to disable the default error handling of invalid options. It is **recommended** to always disable the default error handling in your scripts.
+- The third argument to getopts is the list of arguments and options to be processed. When not provided, this defaults to the arguments and options provided to the application (`$@`)
+
+## Shifting processed options
+The variable `OPTIND` holds the number of options parsed by the last call to getopts. It is common practice to call the shift command at the end of your processing loop to remove options that have already been handled from $@ by:
+
+```shell
+shift $((OPTIND -1))
+```
+
+## Parsing options with arguments
+Options that themselves have arguments are signified with a `:`. The argument to an option is placed in the variable `OPTARG`. In the following example, the option `t` takes an argument. When the argument is provided, we copy its value to the variable target. If no argument is provided getopts will set opt to `:`. We can recognize this error condition by catching the : case and printing an appropriate error message.
+
+## An example
+check that -s exists, if not return error; check that the value after the -s is 45 or 90; check that the -p exists and there is an input string after; if the user enters ./myscript -h or just ./myscript then display help.
+
+```Shell
+#!/usr/bin/env bash
+usage() { echo "$0 usage:" && grep " .)\ #" $0; exit 0; }
+[ $# -eq 0 ] && usage
+while getopts ":hs:p:" arg; do
+  case $arg in
+    p) # Specify p value.
+      echo "p is ${OPTARG}"
+      ;;
+    s) # Specify strength, either 45 or 90.
+      strength=${OPTARG}
+      [ $strength -eq 45 -o $strength -eq 90 ] \
+        && echo "Strength is $strength." \
+        || echo "Strength needs to be either 45 or 90, $strength found instead."
+      ;;
+    h | *) # Display help.
+      usage
+      exit 0
+      ;;
+  esac
+done
+```
+
+# `split` function
+# `body() function in NGSeasy`
+https://unix.stackexchange.com/questions/11856/sort-but-keep-header-line-at-the-top/11859#11859
+# bioawk
+# Parallel
+# xargs
