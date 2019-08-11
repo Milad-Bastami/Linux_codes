@@ -610,10 +610,57 @@ while getopts ":hs:p:" arg; do
   esac
 done
 ```
+# `tee`: Redirect output to multiple files or processes
+The tee command copies standard input to standard output and also to any files given as arguments. This is useful when you want not only to send some data down a pipe, but also to save a copy.
+- The tee command is useful when you happen to be transferring a large amount of data and also want to summarize that data without reading it a second time.
+  - you are downloading a DVD image, you often want to verify its signature or checksum right away. The **inefficient way** to do it is simply: `wget https://example.com/some.iso && sha1sum some.iso`. it makes you wait for the download to complete before starting the time-consuming SHA1 computation and reads DVD two times.
+  - The efficient way: `get -O - https://example.com/dvd.iso | tee >(sha1sum > dvd.sha1) > dvd.iso`. That makes tee write not just to the expected output file, but also to a pipe running sha1sum and saving the final checksum in a file named dvd.sha1.
+  - Note also that if any of the process substitutions (or piped stdout) might exit early without consuming all the data, the `-p` option is needed to allow tee to continue to process the input to any remaining outputs.
+  - A more conventional and portable use of `tee`: `wget -O - https://example.com/dvd.iso | tee dvd.iso | sha1sum > dvd.sha1`
+- You can extend this example to **make tee write to two processes**:
+    ```Shell
+    wget -O - https://example.com/dvd.iso \
+    | tee >(sha1sum > dvd.sha1) \
+          >(md5sum > dvd.md5) \
+    > dvd.iso
+      ```
 
+- This technique is also useful when you want to make a compressed copy of the contents of a pipe. For a
+large hierarchy, ‘du -ak’ can run for a long time, and can easily produce terabytes of data, so you won’t want to rerun the command unnecessarily. Nor will you want to save the uncompressed output.
+  - Inefficient way:
+    ```shell
+    du -ak | gzip -9 > /tmp/du.gz
+    gzip -d /tmp/du.gz | xdiskusage -a
+      ```
+  - Efficient way:
+    ```shell
+    du -ak | tee >(gzip -9 > /tmp/du.gz) | xdiskusage -a
+    ```
+- Another example
+-
+  ```Shell
+  tardir=your-pkg-M.N
+  tar chof - "$tardir" \
+  | tee >(gzip -9 -c > your-pkg-M.N.tar.gz) \
+  | bzip2 -9 -c > your-pkg-M.N.tar.bz2
+  ```
+- If you want to further process the output from process substitutions, and those processes write atomically (i.e., write less than the system’s PIPE BUF size at a time), that’s possible with a construct like:
+-
+  ```shell
+  tardir=your-pkg-M.N
+  tar chof - "$tardir" \
+    | tee >(md5sum --tag) > >(sha256sum --tag) \
+    | sort | gpg --clearsign > your-pkg-M.N.tar.sig
+  ```
+
+# Other notes
+- `set -o errexit` or `set -e` in a script: `-e` Exit immediately if a pipeline, which may consist of a single simple command, a subshell command enclosed in parentheses, or one of the commands executed as part of a command list enclosed by braces returns a non-zero status. **The shell does not exit if** the command that fails is part of the command list immediately following a while or until keyword, part of the test in an if statement, part of any command executed in a && or || list except the command following the final && or ||, any command in a pipeline but the last, or if the command’s return status is being inverted with !. Err exit doesnot work inside functions, but find a solution at this **[link][b4bf5877].**
 # `split` function
 # `body() function in NGSeasy`
 https://unix.stackexchange.com/questions/11856/sort-but-keep-header-line-at-the-top/11859#11859
 # bioawk
 # Parallel
 # xargs
+# `find`
+# `sed`
+  [b4bf5877]: https://stackoverflow.com/questions/19789102/why-is-bash-errexit-not-behaving-as-expected-in-function-calls?noredirect=1&lq=1 "Link"
