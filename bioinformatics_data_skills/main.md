@@ -458,7 +458,7 @@ In each of above examples, if `-t` is set to the seperator, and joining field (i
     join -j1 -v1 -v2 file1 file2
     join -j1 -v1 -v2 -o auto -e NA file1 file2
 
-# For unsorted Files
+### For unsorted Files
 
     # Union of unsorted files
     sort -u file1 file2
@@ -477,3 +477,57 @@ In each of above examples, if `-t` is set to the seperator, and joining field (i
 
     # Symmetric Difference of unsorted files
     sort file1 file2 | uniq -u
+
+## Subshells
+First a qucik refresher on **sequential commands** (those connected with `&& || ;`) and **piped commands**. Sequential commands run one after the another and their output is not streamed to the other command in the sequence. The difference between `&&` and `;` is that `&&` cares about the exit status of the previous command but `;` does not care.
+**Subshells** allow us to execute sequential commands together in a seperate shell process. This is usefull primarily for *grouping* sequential commands such that their output is **a single stream**.
+An example usage is: we want to sort a GTF file with a metadata header: we use a subsell to group sequential commands. The first command print the header lines to stdout and seconnd command sort aa lines except headers. Because we used subshel, therefore all commands have a single stream and the result would be printing header lines and sorted lines after header.
+
+```shell
+(zgrep "^#" file.gtf.gz; \
+ zgrep -v "^#" file.gtf.gz | sort k1,1 k4,4n) | \
+ gzip > file.sorted.gtf.gz
+```
+
+- Identify the number of subshells with `echo $BASH_SUBSHELL`.
+- Whenever you run a shell script, it creates a new process called subshell and your script will get executed using a subshell. The shell script we ran had its own environment (including its own directory where commands were being run) and that environment went away once the script finished running.
+- If you run your script with `.` command, it **"source"** the contents of that file into the current shell. And  source and the dot operator being synonyms. Files such as this are often used to incorporate setup commands such as adding things to ones environment variables. **Sourcing a script doesn't call a separate process.** It is like typing all of the commands in the parent process by hand; its environment is preserved after the script ends.
+- A subshell does not inherit a variable's setting. Use the **export** command to export variables and functions to subshell:
+  ```shell
+  WWWJAIL=/apache.jail
+  export WWWJAIL
+  die() { echo "$@"; exit 2; }
+  export -f die
+  # now call script that will access die() and $WWWJAIL
+  /etc/nixcraft/setupjail -d cyberciti.com
+  ```
+- However, environment variables (such as $HOME, $MAIL etc) are passed to subshell.
+
+There are several constructs that create a subshell:
+- **Subshell for grouping**: `( … )` does nothing but create a subshell and wait for it to terminate). Contrast with `{ … }` which groups commands purely for syntactic purposes and does not create a subshell.
+- **Background**: `… &` creates a subshell and does not wait for it to terminate.
+- **Pipeline**: `… | …` creates two subshells, one for the left-hand side and one for the right-hand side, and waits for both to terminate. The shell creates a pipe and connects the left-hand side's standard output to the write end of the pipe and the right-hand side's standard input to the read end. In some shells (ksh88, ksh93, zsh, bash with the lastpipe option set and effective), the right-hand side runs in the original , so the pipeline construct only creates one subshell.
+- **Command substitution**: `$(…)` (also spelled ``…``) creates a subshell with its standard output set to a pipe, collects the output in the parent and expands to that output, minus its trailing newlines. (And the output may be further subject to splitting and globbing, but that's another story.)
+- **Process substitution**: `<(…)` creates a subshell with its standard output set to a pipe and expands to the name of the pipe. The parent (or some other process) may open the pipe to communicate with the subshell. `>(…)` does the same but with the pipe on standard input.
+- **Coprocess**: `coproc …` creates a subshell and does not wait for it to terminate. The subshell's standard input and output are each set to a pipe with the parent being connected to the other end of each pipe.
+
+## Named Pipes and process substitution
+some programs won’t interface with the Unix pipes we’ve come to love and depend on. For example, certain bioinformatics tools read in multiple input files and write to multiple output files:
+```Shell
+processing_tool --in1 in1.fq --in2 in2.fq --out1 out2.fq --out2.fq
+```
+The imaginary program processing_tool requires two separate input files, and produces two separate output files. Because each file needs to be provided separately, we can’t pipe the previous processing step’s results through process ing_tool ’s standard in. there’s a more serious problem: we would have to write and read four intermediate files to disk to use this program.
+A **named pipe**, also known as a **FIFO** (First In First Out, a concept in computer science), is a special sort of file. **Regular pipes are anonymous**—they don’t have a name, and only persist while both processes are running. Named pipes behave like files, and are persistent on your filesystem. We can create a named pipe with the program mkfifo : `mkfifo fqin; ls -l fqin`. this is indeed a special type of file: the p before the file permissions is for pipe.
+Although the syntax is similar to shell redirection to a file, **we’re not actually writing anything to our disk**. Named pipes provide all of the computational benefits of pipes with the flexibility of interfacing with files.
+However, creating and removing these file-like named pipes is a bit tedious. Pro grammers like syntactic shortcuts, so there’s a way to use named pipes without having to explicitly create them. This is called **process substitution**, or sometimes known as **anonymous named pipes**. These allow you to invoke a process, and have its standard output go directly to a named pipe. However, your shell treats this process substitution block like a file, so you can use it in commands as you would a regular file or named pipe: `cat <(echo "hello, process substitution")`.
+![Named pipes](named_pipes.png)
+
+```Shell
+# capturing input stream
+program --in1 <(makein raw1.txt) --in2 <(makein raw2.txt) \
+--out1 out1.txt --out2 out2.txt
+
+# capturing output stream
+program --in1 in1.txt --in2 in2.txt \
+--out1 >(gzip > out1.txt.gz) --out2 >(gzip > out2.txt.gz)
+```
