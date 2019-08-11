@@ -1,3 +1,61 @@
+<!-- TOC -->
+
+- [Chapter 2: setting up and managing a bioinformatics project](#chapter-2-setting-up-and-managing-a-bioinformatics-project)
+  - [shell wild cards and expansion](#shell-wild-cards-and-expansion)
+  - [brace expansion `text-{1,2,3}`:](#brace-expansion-text-123)
+  - [Pandoc: convert between formats: *markdown to HTML*](#pandoc-convert-between-formats-markdown-to-html)
+- [Chapter 3: Remedial Unix shell](#chapter-3-remedial-unix-shell)
+  - [Streams and Redirection](#streams-and-redirection)
+    - [concatanating multiple files:](#concatanating-multiple-files)
+    - [redirection:](#redirection)
+    - [a tip regarding `ls -lrt`*](#a-tip-regarding-ls--lrt)
+    - [redirectong both std out & std err: logfiles](#redirectong-both-std-out--std-err-logfiles)
+    - [redirecting to pseudodevice `/dev/null/`](#redirecting-to-pseudodevice-devnull)
+    - [using tail -f to monitor redirected std err](#using-tail--f-to-monitor-redirected-std-err)
+  - [using pipes](#using-pipes)
+    - [Combining pipes and redirection](#combining-pipes-and-redirection)
+    - [Redirecting stderr to stdout `>2&1`](#redirecting-stderr-to-stdout-21)
+    - [a tee joint in pipe](#a-tee-joint-in-pipe)
+  - [Managing and interacting with processes](#managing-and-interacting-with-processes)
+    - [Background processes](#background-processes)
+    - [background processes and **hangeup**](#background-processes-and-hangeup)
+    - [puting a foreground command to Background](#puting-a-foreground-command-to-background)
+    - [kill a foregrounded process using `CTRL+C`](#kill-a-foregrounded-process-using-ctrlc)
+  - [Exit status](#exit-status)
+  - [Command substitution `$(CMD)`](#command-substitution-cmd)
+- [Chapter 4: Working with remote machines (`SSH`)](#chapter-4-working-with-remote-machines-ssh)
+  - [SSH config file: store your frequent hosts](#ssh-config-file-store-your-frequent-hosts)
+  - [SSH keys](#ssh-keys)
+  - [Maintaining long-running jobs with `nohup` and `tmux`](#maintaining-long-running-jobs-with-nohup-and-tmux)
+- [Chapter-6: Bioinformatics data](#chapter-6-bioinformatics-data)
+  - [Downloading Data](#downloading-data)
+    - [`wget`: downloading Data](#wget-downloading-data)
+    - [`curl`](#curl)
+    - [`Rsync` and `Secure Copy` (SCP)](#rsync-and-secure-copy-scp)
+  - [Data integrity](#data-integrity)
+  - [Looking at differences between data: `diff`](#looking-at-differences-between-data-diff)
+  - [Compressing Data](#compressing-data)
+- [Chapter 7: Unix Data Tools](#chapter-7-unix-data-tools)
+  - [line seperator characters](#line-seperator-characters)
+  - [`head` and `tail`](#head-and-tail)
+  - [`less`](#less)
+  - [Plain text summary information with `wc`, `ls`, `awk`](#plain-text-summary-information-with-wc-ls-awk)
+  - [`cut` working with columns](#cut-working-with-columns)
+  - [`column`](#column)
+  - [`GNU` or `BSD` flavors](#gnu-or-bsd-flavors)
+  - [`grep`](#grep)
+  - [decoding plain text data with `hexdump`](#decoding-plain-text-data-with-hexdump)
+  - [Sorting text files with `sort`](#sorting-text-files-with-sort)
+  - [finding unique values with `uniq`](#finding-unique-values-with-uniq)
+  - [`join`](#join)
+  - [Union, Intersection and Difference of files: 'sort', 'uniq' and 'join'](#union-intersection-and-difference-of-files-sort-uniq-and-join)
+    - [For sorted files](#for-sorted-files)
+    - [For unsorted Files](#for-unsorted-files)
+  - [Subshells](#subshells)
+  - [Named Pipes and process substitution](#named-pipes-and-process-substitution)
+
+<!-- /TOC -->
+
 # Chapter 2: setting up and managing a bioinformatics project
 
 ## shell wild cards and expansion
@@ -516,9 +574,9 @@ some programs won’t interface with the Unix pipes we’ve come to love and dep
 ```Shell
 processing_tool --in1 in1.fq --in2 in2.fq --out1 out2.fq --out2.fq
 ```
-The imaginary program processing_tool requires two separate input files, and produces two separate output files. Because each file needs to be provided separately, we can’t pipe the previous processing step’s results through process ing_tool ’s standard in. there’s a more serious problem: we would have to write and read four intermediate files to disk to use this program.
-A **named pipe**, also known as a **FIFO** (First In First Out, a concept in computer science), is a special sort of file. **Regular pipes are anonymous**—they don’t have a name, and only persist while both processes are running. Named pipes behave like files, and are persistent on your filesystem. We can create a named pipe with the program mkfifo : `mkfifo fqin; ls -l fqin`. this is indeed a special type of file: the p before the file permissions is for pipe.
-Although the syntax is similar to shell redirection to a file, **we’re not actually writing anything to our disk**. Named pipes provide all of the computational benefits of pipes with the flexibility of interfacing with files.
+The imaginary program processing_tool requires two separate input files, and produces two separate output files. Because each file needs to be provided separately, we can’t pipe the previous processing step’s results through process ing_tool ’s standard in. there’s a more serious problem: we would have to write and read four intermediate files to disk to use this program.\
+A **named pipe**, also known as a **FIFO** (First In First Out, a concept in computer science), is a special sort of file. **Regular pipes are anonymous**—they don’t have a name, and only persist while both processes are running. Named pipes behave like files, and are persistent on your filesystem. We can create a named pipe with the program mkfifo : `mkfifo fqin; ls -l fqin`. this is indeed a special type of file: the p before the file permissions is for pipe.\
+Although the syntax is similar to shell redirection to a file, **we’re not actually writing anything to our disk**. Named pipes provide all of the computational benefits of pipes with the flexibility of interfacing with files.\
 However, creating and removing these file-like named pipes is a bit tedious. Pro grammers like syntactic shortcuts, so there’s a way to use named pipes without having to explicitly create them. This is called **process substitution**, or sometimes known as **anonymous named pipes**. These allow you to invoke a process, and have its standard output go directly to a named pipe. However, your shell treats this process substitution block like a file, so you can use it in commands as you would a regular file or named pipe: `cat <(echo "hello, process substitution")`.
 ![Named pipes](named_pipes.png)
 
