@@ -570,12 +570,12 @@ There are several constructs that create a subshell:
 - **Coprocess**: `coproc …` creates a subshell and does not wait for it to terminate. The subshell's standard input and output are each set to a pipe with the parent being connected to the other end of each pipe.
 
 ## Named Pipes and process substitution
-some programs won’t interface with the Unix pipes we’ve come to love and depend on. For example, certain bioinformatics tools read in multiple input files and write to multiple output files:
+Some programs won’t interface with the Unix pipes we’ve come to love and depend on. For example, certain bioinformatics tools read in multiple input files and write to multiple output files:
 ```Shell
 processing_tool --in1 in1.fq --in2 in2.fq --out1 out2.fq --out2.fq
 ```
 The imaginary program processing_tool requires two separate input files, and produces two separate output files. Because each file needs to be provided separately, we can’t pipe the previous processing step’s results through process ing_tool ’s standard in. there’s a more serious problem: we would have to write and read four intermediate files to disk to use this program.\
-A **named pipe**, also known as a **FIFO** (First In First Out, a concept in computer science), is a special sort of file. **Regular pipes are anonymous**—they don’t have a name, and only persist while both processes are running. Named pipes behave like files, and are persistent on your filesystem. We can create a named pipe with the program mkfifo : `mkfifo fqin; ls -l fqin`. this is indeed a special type of file: the p before the file permissions is for pipe.\
+A **named pipe**, also known as a **FIFO** (First In First Out, a concept in computer science), is a special sort of file. **Regular pipes are anonymous**—they don’t have a name, and only persist while both processes are running. Named pipes behave like files, and are persistent on your filesystem. We can create a named pipe with the program mkfifo : `mkfifo fqin; ls -l fqin`. This is indeed a special type of file: the p before the file permissions is for pipe.\
 Although the syntax is similar to shell redirection to a file, **we’re not actually writing anything to our disk**. Named pipes provide all of the computational benefits of pipes with the flexibility of interfacing with files.\
 However, creating and removing these file-like named pipes is a bit tedious. Pro grammers like syntactic shortcuts, so there’s a way to use named pipes without having to explicitly create them. This is called **process substitution**, or sometimes known as **anonymous named pipes**. These allow you to invoke a process, and have its standard output go directly to a named pipe. However, your shell treats this process substitution block like a file, so you can use it in commands as you would a regular file or named pipe: `cat <(echo "hello, process substitution")`.
 ![Named pipes](named_pipes.png)
