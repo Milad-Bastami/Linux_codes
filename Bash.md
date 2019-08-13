@@ -1,8 +1,35 @@
 <!-- TOC -->
 
+- [Quoting](#quoting)
+- [Shell commands](#shell-commands)
+  - [Pipelines](#pipelines)
+  - [List of commands](#list-of-commands)
+  - [Compound Commands](#compound-commands)
+    - [Looping Constructs](#looping-constructs)
+      - [until](#until)
+      - [while](#while)
+      - [for](#for)
+    - [Conditional constructs](#conditional-constructs)
+      - [if](#if)
+      - [case](#case)
+      - [`((expression))`: The arithmetic expression](#expression-the-arithmetic-expression)
+      - [`[[expression]]`](#expression)
+    - [Grouping Commands](#grouping-commands)
+      - [`(list of cammands)`](#list-of-cammands)
+      - [`{list of Commands;}`](#list-of-commands)
+- [Functions](#functions)
+- [Shell Parameters](#shell-parameters)
+  - [nameref](#nameref)
+  - [Positional Parameters](#positional-parameters)
+  - [Special Parameters](#special-parameters)
 - [Shell expansions & string manupulations](#shell-expansions--string-manupulations)
+  - [Brace expansion](#brace-expansion)
+  - [Tilde Expansion](#tilde-expansion)
   - [parameter or variable expansions](#parameter-or-variable-expansions)
   - [String manupulations with `expr`](#string-manupulations-with-expr)
+  - [Command Substitution](#command-substitution)
+  - [Process Substitution `<(list)`, `>(list)`](#process-substitution-list-list)
+  - [Arithmetic Expansion `$(( expression ))`](#arithmetic-expansion--expression-)
 - [`read`](#read)
   - [Syntax:](#syntax)
   - [options:](#options)
@@ -21,15 +48,538 @@
   - [Shifting processed options](#shifting-processed-options)
   - [Parsing options with arguments](#parsing-options-with-arguments)
   - [An example](#an-example)
+- [`tee`: Redirect output to multiple files or processes](#tee-redirect-output-to-multiple-files-or-processes)
+- [Other notes](#other-notes)
 - [`split` function](#split-function)
 - [`body() function in NGSeasy`](#body-function-in-ngseasy)
 - [bioawk](#bioawk)
 - [Parallel](#parallel)
 - [xargs](#xargs)
+- [`find`](#find)
+- [`sed`](#sed)
 
 <!-- /TOC -->
 
+# Quoting
+Quoting is used to remove the special meaning of certain characters or words to the shell. Quoting can be used to disable special treatment for special characters, to prevent reserved words from being recognized as such, and to prevent parameter expansion. Each of the shell metacharacters as special meaning to the shell and must be quoted if it is to represent itself.
+There are **three quoting mechanisms**:
+1. Escape Character `\`: It preserves the literal value of the next character that follows, with the exception of newline.
+2. Single Quotes `''`: reserves the literal value of each character
+3. Double Quotes `""`: reserves the literal value of all characters with the exception of `‘$’, ‘‘’, ‘\’`, and, when history expansion is enabled, `!`; A double quote may be quoted within double quotes by preceding it with a backslash.
+
+**Other Quotes:**
+- **ANSI-C Quoting**: `$'word'`: The word expands to string, with backslash-escaped characters replaced as specified by the ANSI C standard.
+- **Locale-Specific Translation**: $"word": will cause the string to be translated according to the current locale. If the current locale is C or POSIX, the dollar sign is ignored. If the string is translated and replaced, the replacement is double-quoted.
+
+# Shell commands
+## Pipelines
+- A pipeline is a sequence of one or more commands separated by one of the control operators
+`|` or `|&`. each command reads the previous command’s output. This connection is performed **before any redirections** specified by the command.
+- If `|&` is used, command1’s standard error, in addition to its standard output, is connected to command2’s standard input through the pipe; it is shorthand for `2>&1 |`. This implicit redirection of the standard error to the standard output is performed **after any redirections** specified by the command.
+- The reserved word `time` causes timing statistics to be printed for the pipeline once it finishes. `time` outputs to `2>` stderr.
+
+  ```Shell
+  # get the individual times
+  ( time foo.sh ) 2>foo.time | ( time bar.sh ) 2> bar.time
+
+  # get the whole time
+  time sh -c "foo.sh | bar.sh "
+  time ( foo.sh | bar.sh )
+  time { foo.sh | bar.sh; } 2>time.txt
+  ```
+- Each command in a pipeline is executed in its own subshell, which is a separate process
+- If the `lastpipe` option is enabled using the `shopt` builtin, the last element of a pipeline may be run by the shell process.
+- If the reserved word `!` precedes the pipeline, the exit status is the logical negation of the exit status as described above.
+- The **exit status of a pipeline** is the exit status of the last command in the pipeline, unless the `pipefail` option is enabled.
+- If pipefail is enabled, the pipeline’s return status is the value of the last (rightmost) command to exit with a non-zero status, or zero if all commands exit successfully.
+- The shell waits for all commands in the pipeline to terminate before returning a value.
+- `command1 && command2`: command2 is executed if, and only if, command1 returns an exit status of zero (success).
+- `command1 || command2`: command2 is executed if, and only if, command1 returns a non-zero exit status.
+- The return status of and and or lists is the exit status of the last command executed
+in the list.
+
+## List of commands
+- A list is a sequence of one or more pipelines separated by one of the operators `;`, `&`, `&&`, or `||`, and optionally terminated by one of `;`, `&`, or a newline.
+- A sequence of one or more newlines may appear in a list to delimit commands, equiv-
+alent to a semicolon.
+- If a command is terminated by the control operator `&`, the shell executes the command
+**asynchronously** in a subshell (excecuting in **background**,). These are asynchronous commands: The shell does not wait for the command to finish, and the return status is 0 (true). The process inherits stdout/stderr from the shell (so it still writes to the terminal).
+- Commands separated by a ‘;’ are executed sequentially; the shell waits for each command to terminate in turn. The return status is the exit status of the last command executed.
+
+## Compound Commands
+Compound commands are the shell programming language constructs. Bash provides **looping constructs**, **conditional commands**, and mechanisms to **group** commands and execute them as a unit.
+
+### Looping Constructs
+#### until
+  ```Shell
+  until test-commands; do consequent-commands; done
+  ```
+
+  ```Shell
+  until [CONDITION]
+  do
+    [COMMANDS]
+  done
+```
+
+- Execute consequent-commands as long as test-commands has an exit status which is not zero.
+-  If the condition evaluates to false, commands are executed. Otherwise, if the condition evaluates to true the loop will be terminated and the program control will be passed to the command that follows.
+- The return status is the exit status of the last command executed in consequent-commands, or zero if none was executed.
+- **The while and until loops are similar** to each other with the **main difference** being that the while loop iterates as long as the condition evaluates to true and the until loop iterates as long as the condition evaluates to false.
+
+  ```Shell
+  counter=0
+
+  until [ $counter -gt 5 ]
+  do
+    echo Counter: $counter
+    ((counter++))
+  done
+  ```
+- **A git example** The following script may be useful if your git host is having downtime and instead of manually typing git pull multiple times until the host is online you can run the script once.
+
+  ```Shell
+  until git pull &> /dev/null
+  do
+      echo "Waiting for the git host ..."
+      sleep 1
+  done
+
+  echo -e "\nThe git repository is pulled."
+```
+
+#### while
+  ``` Shell
+  while test-commands; do consequent-commands; done
+  ```
+- Execute consequent-commands as long as test-commands has an exit status of zero.
+- The return status is the exit status of the last command executed in consequent-commands, or zero if none was executed.
+
+The **example** below was written to copy pictures that are made with a webcam to a web directory. Every five minutes a picture is taken. Every hour, a new directory is created, holding the images for that hour. Every day, a new directory is created containing 24 subdirectories. The script runs in the background.
+
+  ```Shell
+  #!/bin/bash
+
+  # This script copies files from my homedirectory into the webserver directory.
+  # (use scp and SSH keys for a remote directory)
+  # A new directory is created every hour.
+
+  PICSDIR=/home/carol/pics
+  WEBDIR=/var/www/carol/webcam
+
+  while true; do
+	    DATE=`date +%Y%m%d`
+	    HOUR=`date +%H`
+	    mkdir $WEBDIR/"$DATE"
+
+	    while [ $HOUR -ne "00" ]; do
+		    DESTDIR=$WEBDIR/"$DATE"/"$HOUR"
+		    mkdir "$DESTDIR"
+		    mv $PICDIR/*.jpg "$DESTDIR"/
+		    sleep 3600
+		    HOUR=`date +%H`
+	    done
+
+  done
+  ```
+
+#### for
+  ```shell
+  for name [ [in [words ...] ] ; ] do commands; done
+  ```
+- Expand words and execute commands once for each member in the resultant list, with name bound to the current member.
+- If `in words` is not present, the for command executes the commands once for each positional parameter that is set, as if `in "$@"` had been specified
+- The return status is the exit status of the last command that executes. If there are no items in the expansion of words, no commands are executed, and the return status is zero.
+- The `break` and `continue` builtins may be used to control loop execution.
+- The continue statement resumes iteration of an enclosing for, while, until or select loop
+  ```Shell
+  for i in 1 2 3 4 5
+  do
+    command1
+    command2
+    if (disaster); then
+      break
+    fi
+    command3 # executed only if no disaster occured
+  done
+  ```
+  **Using continue in a bash for loop**
+  There are also times when you want to break the execution of the series of commands, for a certain value on the series, but do not stop the complete program. In this case, if the condition is true, the command 3 is not executed over that value, and the program jumps to the next one.
+
+  ```Shell
+  for i in [series]
+  do
+          command 1
+          command 2
+          if (condition) # Condition to jump over command 3
+                  continue # skip to the next value in "series"
+          fi
+          command 3
+  done
+  ```
+
+
+  ```Shell
+  for file in /etc/*
+  do
+    if ("$file" == "scecific file"); then
+      # do some operation to file
+      break
+    fi
+  done
+  ```
+
+  ```Shell
+  for i in $(command)
+  for i in {1..5}
+  for i in {1..10..2}
+  for i in $(seq 1 2 20) # {1..20..2} is better
+  ```
+
+**An alternative form:**
+  ```Shell
+  for (( expr1 ; expr2 ; expr3 )) ; do commands ; done
+  ```
+- expr1: initializer; expr2: condition; expr3: countinh expressions
+- `for ((c=5;c < 5; c++))`
+
+### Conditional constructs
+#### if
+  ```Shell
+  if test-commands; then
+      consequent-commands;
+  [elif more-test-commands; then
+      more-consequents;]
+  [else alternate-consequents;]
+  fi
+  ```
+
+- in the below example, only the exit status of the COMMAND is needed for the if test and therefore the output should be suppressed somehow
+  ```Shell
+  if COMMAND 2>& /dev/null; then
+    # perform some actions
+  fi
+
+  if grep -q "patter" file #-q make grep quient
+  then
+    # do something
+  fi
+
+  if cmp a b &> /dev/null; then
+    echo "files are identical"
+  else echo "files rae not identical"
+  fi
+  ```
+
+#### case
+The CASE statement is the simplest form of the IF-THEN-ELSE statement in BASH.
+
+  ```Shell
+  case word in
+     [ [(] pattern [| pattern]...) command-list ;;]...
+  esac
+  ```
+
+  ```Shell
+  case EXPRESSION in
+
+    PATTERN_1)
+      STATEMENTS
+      ;;
+
+    PATTERN_2)
+      STATEMENTS
+      ;;
+
+    PATTERN_N)
+      STATEMENTS
+      ;;
+
+    *)
+      STATEMENTS
+      ;;
+  esac
+  ```
+- case will selectively execute the command-list corresponding to the **first pattern**
+that matches word. The match is performed accoring to pattern matching.
+- The `|` is used to separate multiple patterns
+- list of patterns and an associated command-list is known as a **clause**.
+- There may be an arbitrary number of case clauses, each terminated by a `;;`,
+`;&`, or `;;&`. If the ‘;;’ operator is used, no subsequent matches are attempted after the first pattern match. Using `;&` in place of `;;` causes execution to continue with the command-list associated with the next clause, if any. Using `;;&` in place of `;;` causes the shell to test the patterns in the next clause, if any, and execute any associated command-list on a successful match, continuing the case statement execution as if the pattern list had not matched.
+- The first pattern that matches determines the command-list that is executed.
+- It’s a **common idiom** to use `*` as the final pattern to define the default case, since that pattern will always match.
+- The return status is zero if no pattern is matched. Otherwise, the return status is the exit status of the command-list executed.
+
+  ```Shell
+  echo -n "Enter the name of an animal: "
+  read ANIMAL
+  echo -n "The $ANIMAL has "
+
+  case $ANIMAL in
+    horse | dog | cat) echo -n "four";;
+    man | kangaroo ) echo -n "two";;
+    *) echo -n "an unknown number of";;
+  esac
+  echo " legs."
+  ```
+
+This **example** prints the number of lines,number of words and delete the lines that matches the given pattern.
+
+  ```Shell
+  #!/bin/bash
+
+  # Check 3 arguments are given #
+  if [ $# -lt 3 ]
+  then
+        echo "Usage : $0 option pattern filename"
+        exit
+  fi
+
+# Check the given file is exist #
+  if [ ! -f $3 ]
+  then
+        echo "Filename given \"$3\" doesn't exist"
+        exit
+  fi
+
+  case "$1" in
+
+  # Count number of lines matches
+  -i) echo "Number of lines matches with the pattern $2 :"
+      grep -c -i $2 $3
+      ;;
+    # Count number of words matches
+  -c) echo "Number of words matches with the pattern $2 :"
+      grep -o -i $2 $3 | wc -l
+      ;;
+    # print all the matched lines
+  -p) echo "Lines matches with the pattern $2 :"
+      grep -i $2 $3
+      ;;
+    # Delete all the lines matches with the pattern
+   -d) echo "After deleting the lines matches with the pattern $2 :"
+      sed -n "/$2/!p" $3
+      ;;
+   *) echo "Invalid option"
+      ;;
+   esac
+  ```
+
+#### `((expression))`: The arithmetic expression
+If the value of the expression is non-zero, the return status is 0; otherwise the return status is 1. This is exactly equivalent to `let "expression"`
+
+#### `[[expression]]`
+Return a status of 0 or 1 depending on the evaluation of the conditional expression expression. **Word splitting and filename expansion are not performed** on the words between the `[[` and `]]`. Therefore, the following is safe (without "") `[[ -f $filenames]]` but this is not safe [-f $filenames]; tilde expansion, parameter and variable expansion, arithmetic expansion, command substitution, process substitution, and quote removal are performed.
+- The `=` operator is identical to `==`.
+- When the `==` and `!=` operators are used, the string to the right of the operator is considered a **pattern** and matched according to the pattern matching rules.
+- `=~`: When it is used, the string to the right of the operator is considered a POSIX extended regular expression (ERE). If the regular expression is syntactically incorrect, the conditional expression’s return value is 2.
+- **Bracket expressions in regular expressions must be treated carefully**, since normal quoting characters lose their meanings between brackets.
+- If the pattern is stored in a shell variable, quoting the variable expansion forces the entire pattern to be matched as a string. The following two sets of commands are not equivalent:
+  ```Shell
+  pattern=’\.’
+
+  [[ . =~ $pattern ]]    # will succeed
+  [[ . =~ \. ]]          # will succeed
+
+  [[ . =~ "$pattern" ]]  # will fail
+  [[ . =~ ’\.’ ]]        # will fail
+  ```
+  In the second two, pattern is a string and the backslash will be part of the pattern to be matched. In the first two examples, the backslash removes the special meaning from ‘.’, so the literal ‘.’ matches.
+
+- Storing the regular expression in a shell variable is often a useful way to avoid
+problems with quoting characters that are special to the shell.
+
+  ```Shell
+  [[ $line =~ [[:space:]]*?(a)b ]]
+
+  pattern=’[[:space:]]*?(a)b’
+  [[ $line =~ $pattern ]]
+  ```
+  If you want to match a character that’s special to the regular expression grammar, it has to be quoted to remove its special meaning. This means that in the pattern ‘xxx.txt’, the ‘.’ matches any character in the string (its usual regular expression meaning), but in the pattern ‘"xxx.txt"’ it can only match a literal ‘.’;
+
+  ```Shell
+  pattern='xx.txt'
+  [[ "xxxtxt =~ $pattern" ]] && echo TRUE # TRUE
+
+  pattern="xx.txt"
+  [[ "xxxtxt =~ $pattern" ]] && echo TRUE # TRUE
+
+  pattern='"xx.txt"'
+  [[ "xxxtxt =~ $pattern" ]] && echo TRUE # it fails to match
+  ```
+
+- **`( expression )`**
+inside `[[]]`, returns the value of expression. This may be used to override the normal precedence of operators.
+- **`[[! expression]]`**: returns true if expression is false.
+- `[[ expression1 && expression2 ]]`
+- `[[expression1 || expression2]]`
+True if either expression1 or expression2 is true.
+
+### Grouping Commands
+Bash provides two ways to group a list of commands to be executed as a unit. When commands are grouped, redirections may be applied to the entire command list. For example, the output of all the commands in the list may be redirected to **a single stream**.
+#### `(list of cammands)`
+Placing a list of commands between parentheses causes a **subshell** environment to be created
+
+#### `{list of Commands;}`
+Placing a list of commands between curly braces causes the list to be executed in the **current shell** context. The **semicolon** (or newline) following list is required.
+
+# Functions
+
+```shell
+name () compound-command [ redirections ]
+function name [()] compound-command [ redirections ]
+```
+
+- The exit status of a function definition is zero unless a syntax error occurs or a readonly function with the same name already exists.
+- When a function is executed, the arguments to the function become the positional parameters during its execution
+- The special parameter ‘#’ that expands to the number of positional parameters is updated to reflect the change. Special parameter 0 is unchanged.
+- Variables local to the function may be declared with the `local` builtin.
+- The shell uses **dynamic scoping** to control a variable’s visibility within functions:
+  - Local variables "**shadow**" variables with the same name declared at previous scopes. For instance, a local variable declared in a function hides a global variable of the same name: references and assignments refer to the local variable, leaving the global variable unmodified. When the function returns, the global variable is once again visible.
+-  The value of a variable that a function sees depends on its value within its caller
+
+For example, if a variable var is declared as local in function func1, and func1 calls
+another function func2, references to var made from within func2 will resolve to the local
+variable var from func1, shadowing any global variable named var.
+
+  ```shell
+  #In func2, var = func1 local
+  func1()
+  {
+  local var=’func1 local’
+  func2
+  }
+  func2()
+  {
+  echo "In func2, var = $var"
+  }
+  var=global
+  func1
+  ```
+
+# Shell Parameters
+- A parameter is an entity that stores values. It can be a name, a number, or one of the special characters listed below. A variable is a parameter denoted by a name. A parameter is set if it has been assigned a value. The null string is a valid value. Once a variable is set, it may be unset only by using the `unset` builtin command.
+- If the variable has its integer attribute set, then value is evaluated as an arithmetic expression even if the $((...)) expansion is not used.
+  ```shell
+  declare -i x
+  x=1+1
+  echo $x # 2
+  ```
+- **Word splitting** is not performed, with the exception of "$@".
+- **Filename expansion** is not performed.
+- `+=`: to append or  add to the previouss value
+
+  ```shell
+  y="test"
+  y+="B"
+  echo $y # testB
+  ```
+## nameref
+A variable can be assigned the nameref attribute using the -n option to the declare or local builtin commands to create a nameref, or a reference to another variable. This allows variables to be manipulated indirectly. Whenever the nameref variable is referenced, assigned to, unset, or has its attributes modified (other than using or changing the nameref attribute itself), the operation is actually performed on the variable specified by the nameref variable’s value. A nameref is commonly used within shell functions to refer to a variable whose name is passed as an argument to the function. For instance, if a variable name is passed to a shell function as its first argument, running `declare -n ref=$1` inside the function creates a nameref variable ref whose value is the variable name passed as the first argument.
+
+```shell
+function boo()
+{
+    local -n ref=$1
+    ref='new'
+}
+
+SOME_VAR='old'
+echo $SOME_VAR # -> old
+boo SOME_VAR
+echo $SOME_VAR # -> new
+# Passing the variable's name to boo, not its value: boo SOME_VAR, not boo $SOME_VAR
+```
+## Positional Parameters
+Positional parameters are assigned from the shell’s arguments when it is invoked, and may be reassigned using the set builtin command. Positional parameter N may be referenced as ${N}, or as $N when N consists of a single digit. The set and shift builtins are used to set and unset them. The positional
+parameters are temporarily replaced when a shell function is executed.
+
+## Special Parameters
+- `$*`
+  - Expands to the positional parameters, starting from one.
+  - When the expansion is **not within double quotes**, each positional parameter expands to a separate word. Those words are subject to **further word splitting** and pathname expansion.
+  - When the expansion occurs **within double quotes**, it expands to a single word with the value of each parameter separated by the first character of the IFS special variable. If IFS is null, the parameters are joined without intervening separators.
+- `$@`
+  - Expands to the positional parameters, starting from one.
+  - this expands each positional parameter to a separate word; if not within double quotes, these words are subject to word splitting.
+  - When the expansion occurs within double quotes, and word splitting is performed, each parameter expands to a separate word.
+
+- `$#`: Expands to the number of positional parameters in decimal.
+- `$?`: exit status
+- `$$`: expands to process ID of shell
+- `$!`:  expands to process ID of job recently pplaced to background
+- `$0`: expands to name of shell
+
 # Shell expansions & string manupulations
+The order of expansions is: brace expansion; tilde expansion, parameter and variable expansion, arithmetic expansion, and command substitution (done in a left-to-right fashion); word splitting; and filename expansion. After these expansions are performed, quote characters present in the original word are removed unless they have been quoted themselves (quote removal).
+
+## Brace expansion
+Brace expansion is used to generate arbitrary strings. Brace expansion allows you to create multiple modified command line arguments out of a single argument. ince the list is executed in a subshell, variable assignments do not remain in effect after the subshell completes.
+
+```Shell
+echo last{mce,boot,xorg}.log
+## output:
+lastmce.log lastboot.log lastxorg.log
+
+mkdir /usr/local/src/bash/{old,new,dist,bugs}
+
+echo /usr/{ucb/{ex,edit},lib/{ex?.?*,how_ex}}
+# /usr/ucb/ex /usr/ucb/edit /usr/lib/ex?.?* /usr/lib/how_ex
+```
+
+**Example for Backup using brace expansion**
+```Shell
+$ cat bkup.sh
+set -x # expand the commands
+da=`date +%F`
+cp $da.log{,.bak}
+
+$ ./bkup.sh
+++ date +%F
++ da=2010-05-28
++ cp 2010-05-28.log 2010-05-28.log.bak
+```
+
+**Example for Restore using brace expansion**
+```Shell
+$ cat restore.sh
+set -x # expand the commands
+da=`date +%F`
+cp $da.log{.bak,}
+
+$ ./restore.sh
+++ date +%F
++ da=2010-05-28
++ cp 2010-05-28.log.bak 2010-05-28.log
+```
+
+**Brace expansion for Ranges** `{1..5}`, `{a..b}`, `{1..10..2}`
+{1..10..2} here 2 is increment
+
+```Shell
+$ cat sequence.sh
+cat /var/log/messages.{1..3}
+echo {a..f}{1..9}.txt
+
+$ ./sequence.sh
+May  9 01:18:29 x3 ntpd[2413]: time reset -0.132703 s
+May  9 01:22:38 x3 ntpd[2413]: synchronized to LOCAL(0), stratum 10
+May  9 01:23:44 x3 ntpd[2413]: synchronized to
+May  9 01:47:48 x3 dhclient: DHCPREQUEST on eth0
+May  9 01:47:48 x3 dhclient: DHCPACK from 23.42.38.201
+..
+..
+a1.txt a2.txt a3.txt a4.txt b1.txt b2.txt b3.txt b4.txt c1.txt c2.txt c3.txt c4.txt
+```
+
+**Brace expansion does not expand variables**
+Brace expansion does not expand bash variables, because the brace expansion is the very first step of the shell expansion, variable will be expanded later. The following **doesnot work**: `x=1;y=10;{$x..$y}` as expected and would yield `{1..10} not the sequence`
+
+## Tilde Expansion
+- ~  ----> The value of $HOME
+- ~/foo ----> $HOME/foo
+- ~fred/foo ----> The subdirectory foo of the home directory of the user fred
+
 ## parameter or variable expansions
 - Basic form is `$a` or `${b}cd`
 - Set the **defalut value** of a variable: `test=${test:-0}`. Examples:
@@ -60,6 +610,18 @@
     echo "-x is specified"
   fi
   ```
+- **Indirect expansion** `${!var}`
+
+  ```shell
+  export xyzzy=plugh ; export plugh=cave
+  echo ${xyzzy}  # plugh
+  echo ${!xyzzy} # cave
+  ```
+
+There are two execption to the above usage:
+1. `${!prefix*}`: Expands to the names of variables whose names begin with prefix, separated by the first character of the IFS special variable.
+2. `${!name[@]}`: indexes of an array
+
 
 - **default value of positional parameters:**
 
@@ -91,7 +653,9 @@ Run the script as:
 
 - `${var:=value}`: he assignment (:=) operator is used to assign a value to the variable if it doesnot already have one; if variable hsa already a value, the assignment doesnot change it; This will not work for positional parameters.
 
-- Display an **Error Message** If $VAR Not Passed:
+- Display an **Error Message** If $VAR Not Passed: `${parameter:?word}`
+
+If parameter is null or unset, the expansion of word (or a message to that effect if word is not present) is written to the standard error and the shell, if it is not interactive, **exits**. Otherwise, the value of parameter is substituted.
 
   ```Shell
   ${varName?Error varName is not defined}
@@ -123,7 +687,6 @@ Run the script as:
     echo $1 # f11:f12
 
     ```
-
 
   - `${var//search/replace}`: replace all instances
      ```Shell
@@ -161,6 +724,7 @@ Run the script as:
   echo ${arr[@]#mil} # AAA BBB CCC
   echo ${arr[idx1]#mil} # AAA
   echo ${arr[idx1]#m*A} # AA
+
 
   str="milAAA milBBB milCCC"
   set -- $str
@@ -233,6 +797,7 @@ offsets start at zero, if you don't specify a length it goes to the end of the s
  str=abcdefgh
  echo ${str:2:-2} # cdef
  ```
+ Can also be parametrized: `POS=4; $LEN=3; echo ${str:$POS:$LEN}`
 
  **Reset the positional parameters**
  You can reset positional parameter using `set`.
@@ -255,9 +820,20 @@ offsets start at zero, if you don't specify a length it goes to the end of the s
  echo ${arr[0]:2} # cdefgh
  echo ${arr[0]: -7:2} # bc
  ```
+- `${!prefix@}` and `${!prefix*}`
+Expands to the names of variables whose names begin with prefix, separated by the first character of the IFS special variable. When ‘@’ is used and the expan- sion appears within double quotes, each variable name expands to a separate word.
 
-- Expand to the length of a variable: `${#VAR}`
-- Can also be parametrized: `POS=4; $LEN=3; echo ${str:$POS:$LEN}`
+- `${!name[@]}` and `${!name[*]}`
+If name is an array variable, expands to the list of array indices (keys) assigned
+in name. If name is not an array, expands to 0 if name is set and null otherwise.
+When ‘@’ is used and the expansion appears within double quotes, each key expands to a separate word.
+
+- `${#VAR}`Expand to the length of a variable:
+- `${#@}`, `${#*}`: number of positional parameters
+- `${#arr[@]}`, `${#arr[**@**]}`: number of array elements
+- `${#arr[-1]}`: length of the last element of the array
+- `${#arr[3]}`: length of the third element of the array
+
 - **Changing the case of matched patterns**:
   - `${parameter^pattern}`: lowercase to uppercase; only first match
   - `${parameter^^pattern}`: lowercase to uppercase; all matches
@@ -316,6 +892,26 @@ echo "${foo@Q}"
   echo `expr index "$string" 1c`  # 3
   # c in position#3 matches before 1
   ```
+
+## Command Substitution
+
+```Shell
+$(command)
+or
+‘command‘
+```
+
+## Process Substitution `<(list)`, `>(list)`
+
+- **Embedded newlines** are not deleted, but they may be removed during word splitting.
+- If the substitution appears** within double quotes**, **word splitting and filename expansion are not performed** on the results.
+- Command substitutions may be **nested**. To nest when using the backquoted form, escape
+the inner backquotes with backslashes.
+- The command substitution `$(cat file)` can be replaced by the equivalent but **faster** `$(< file)`
+
+## Arithmetic Expansion `$(( expression ))`
+All tokens in the expression undergo parameter and variable expansion, command substitution, and quote removal
+
 
 # `read`
 By default, read considers a newline character as the end of a line, but this can be changed using the `-d` option.
@@ -476,7 +1072,7 @@ test arg1 {-eq | -ne | -lt | -le | -gt | -ge} arg2
 - `g file`	Returns true if file has the setgid bit set.
 -`h file`	Returns true if file is a **symbolic link**. Does the same thing as **-L**. Both are included for compatibility reasons with legacy versions of Unix.
 - `-k file`	Returns true if file has its sticky bit set.
-- `-p file`	Returns true if the file is a named pipe, e.g., as created with the command mkfifo.
+- `-p file`	Returns true if the file is a **named pipe**, e.g., as created with the command `mkfifo`.
 - `-r file`	Returns true if file is readable by the user running test.
 - `-s file`	Returns true if **file exists, and is not empty**.
 - `-S file`	Returns true if file is a socket.
