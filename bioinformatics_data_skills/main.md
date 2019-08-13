@@ -14,7 +14,7 @@
     - [using tail -f to monitor redirected std err](#using-tail--f-to-monitor-redirected-std-err)
   - [using pipes](#using-pipes)
     - [Combining pipes and redirection](#combining-pipes-and-redirection)
-    - [Redirecting stderr to stdout `>2&1`](#redirecting-stderr-to-stdout-21)
+    - [Redirecting stderr to stdout `&>`, `&>>`,`2>&1`](#redirecting-stderr-to-stdout--21)
     - [a tee joint in pipe](#a-tee-joint-in-pipe)
   - [Managing and interacting with processes](#managing-and-interacting-with-processes)
     - [Background processes](#background-processes)
@@ -128,10 +128,12 @@ handling stderr and stdout of two processes
 
     program1 input.txt 2> program1.stderr | program2 2> program2.stderr
 
-### Redirecting stderr to stdout `>2&1`
+### Redirecting stderr to stdout `&>`, `&>>`,`2>&1`
 A use case of this approach is when you want to look for "error" both in std out and std out. pipes only works on std out not std err. First merge stderr and std output
 
     program1 2>&1 | grep "error"
+
+`&>` is equivalent to `2>&1`; `>&` is also used, but the preferred method is `&>`, because `&>>` means appending but the other forms doesnot have appending.
 ### a tee joint in pipe
 We occasionly need to write intermediate files to disk for debuging purposes or to have the output of long term running programs and also use pipe benefits. The tee program works like a plumber tee joint: the output of program1 both wrritten to intermediate.file and redirected as input to program2.
 
@@ -576,6 +578,7 @@ processing_tool --in1 in1.fq --in2 in2.fq --out1 out2.fq --out2.fq
 ```
 The imaginary program processing_tool requires two separate input files, and produces two separate output files. Because each file needs to be provided separately, we can’t pipe the previous processing step’s results through process ing_tool ’s standard in. there’s a more serious problem: we would have to write and read four intermediate files to disk to use this program.\
 A **named pipe**, also known as a **FIFO** (First In First Out, a concept in computer science), is a special sort of file. **Regular pipes are anonymous**—they don’t have a name, and only persist while both processes are running. Named pipes behave like files, and are persistent on your filesystem. We can create a named pipe with the program mkfifo : `mkfifo fqin; ls -l fqin`. This is indeed a special type of file: the p before the file permissions is for pipe.\
+With anonymous pipes, there's one reader and one writer, but that's not required with named pipes—any number of readers and writers may use the pipe.\
 Although the syntax is similar to shell redirection to a file, **we’re not actually writing anything to our disk**. Named pipes provide all of the computational benefits of pipes with the flexibility of interfacing with files.\
 However, creating and removing these file-like named pipes is a bit tedious. Pro grammers like syntactic shortcuts, so there’s a way to use named pipes without having to explicitly create them. This is called **process substitution**, or sometimes known as **anonymous named pipes**. These allow you to invoke a process, and have its standard output go directly to a named pipe. However, your shell treats this process substitution block like a file, so you can use it in commands as you would a regular file or named pipe: `cat <(echo "hello, process substitution")`.
 ![Named pipes](named_pipes.png)
