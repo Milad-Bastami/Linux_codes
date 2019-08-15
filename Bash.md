@@ -901,8 +901,6 @@ or
 ‘command‘
 ```
 
-## Process Substitution `<(list)`, `>(list)`
-
 - **Embedded newlines** are not deleted, but they may be removed during word splitting.
 - If the substitution appears** within double quotes**, **word splitting and filename expansion are not performed** on the results.
 - Command substitutions may be **nested**. To nest when using the backquoted form, escape
@@ -912,6 +910,188 @@ the inner backquotes with backslashes.
 ## Arithmetic Expansion `$(( expression ))`
 All tokens in the expression undergo parameter and variable expansion, command substitution, and quote removal
 
+## Process Substitution `<(list)`, `>(list)`
+- The process list is run asynchronously (subshell)
+- The process list is run asynchronously, and its input or output appears as a filename.
+- Note that no space may appear between the < or > and the left parenthesis
+
+## Word Splitting
+- The shell scans the results of parameter expansion, command substitution, and arithmetic expansion that did **not occur within double quotes** for word splitting.
+- The shell treats each character of `$IFS` as a delimiter, and splits the results of the other expansions into words using these characters as field terminators.
+
+**Looking at `$IFS`**
+```Shell
+echo -n "$IFS" | hexdump -c
+printf %q "$IFS"
+```
+
+**Example**: A script that will show us the arguments as passed by the shell
+
+```Shell
+#!/bin/sh -
+# args
+printf "%d args:" "$#"
+printf " <%s>" "$@"
+echo
+
+#-----#
+args hello world "how are you?"
+# output:
+3 args: <hello> <world> <how are you?>
+
+# if we unquote the $@:
+3 args: <hello> <world> <how> <are> <you?>
+# $# still says 3 args, but after word expansion there are 5 words
+# because word expansion occurs after parameter expansion.
+```
+
+- If `IFS` is not set, then it will be performed as if IFS contained a space, a tab, and a newline
+
+```Shell
+var="This is a variable"
+args $var
+4 args: <This> <is> <a> <variable>
+
+#-----#
+
+log=/var/log/qmail/current IFS=/
+args $log
+5 args: <> <var> <log> <qmail> <current>
+unset IFS
+```
+_ if `IFS` is default or it contains `whitespace`, the withespace, tab and newlines are start or end will be ignored (removed), but if `IFS` is anything else (like the example above), delimiters at starts and ends will be considered.
+
+### Controlling Word Splitting
+- we usually do not want to let word splitting occur when filenames are involved
+- **Double quoting** an expansion suppresses word splitting, except in the special cases of `"$@"` and `"${array[@]}"`
+- `"$@"` causes each positional parameter to be expanded to a separate word; its array equivalent likewise causes each element of the array to be expanded to a separate word.
+
+```shell
+var="This is a variable"; args "$var"
+1 args: <This is a variable>
+
+array=(testing, testing, "1 2 3"); args "${array[@]}"
+3 args: <testing,> <testing,> <1 2 3>
+```
+
+- **sequences of non-whitespace characters**: If IFS contains non-whitespace characters, then empty words can be generated:
+
+```Shell
+getent passwd sshd
+sshd:x:100:65534::/var/run/sshd:/usr/sbin/nologin
+
+IFS=:; args $(getent passwd sshd)
+7 args: <sshd> <x> <100> <65534> <> </var/run/sshd> </usr/sbin/nologin>
+griffon:~$ unset IFS
+```
+- non-whitespace IFS characters are not ignored at the beginning and end of expansions, the way whitespace IFS characters are.
+- Whitespace IFS characters get consolidated. Multiple spaces in a row, for example, have the same effect as a single space, when IFS contains a space (or is not set at all).
+- **Newlines also count as whitespace** for this purpose, which has important ramifications when attempting to load an array with lines of input.
+
+- Word splitting is **not performed** on expansions inside Bash keywords such as `[[ ... ]]` and `case`.
+- Word splitting is **not performed** on expansions in **assignments**. Thus, one does not need to quote anything in a command like these: `foo=$bar; bar=$(a command); logfile=$logdir/foo-$(date +%Y%m%d); PATH=/usr/local/bin:$PATH ./myscript`
+- In either case, quoting anyway will not break anything. **So if in doubt, quote!**
+- When using the `read` command (which you generally don't want to use without `-r`), word splitting is performed on the input. That's generally wanted when read `-a` is used (to populate an array) or when passing more than one variable to read. Some amount of word splitting is still done when only one variable is given in that leading and trailing IFS whitespace characters are stripped and one trailing non-whitespace IFS character (possibly surrounded by IFS whitespace characters) would be stripped if there was no other separator in the input (like in `IFS=": " read -r var <<< "input : "; echo $var` [# input]). Quoting is irrelevant here, though this behavior can be disabled by emptying IFS, typically with `IFS= read -r var`
+
+
+## Filename Expansion (Path expansion or globbing)
+After word splitting, Bash scans each word for the characters `*`, `?` and `[`. If one of these characters appears, then the word is regarded as a pattern, and replaced with an alphabetically sorted list of filenames matching the pattern. If no matching filenames are found, and the shell option `nullglob` is disabled, the word is left unchanged. If the `nullglob` option is set, and no matches are found, the word is removed. If the `failglob` shell option is set, and no matches are found, an error message is printed and the command is not executed.
+
+### Pattern Matching
+The `nul` character may not occur in a pattern. Quting prevents special characters from being interpreted.
+- `*`: Matches any string, including the null string. When the `globstar` shell option is enabled, `**` is recrusive (files directories and subdirectories).
+- `?`: match any single character
+- `[...]`: Matches any one of the enclosed characters.
+- `[A-Z]`, `[a-dx-z]`: range
+- `[^A]` or `[!A]`: anything except A
+
+If the `extglob` shell option is enabled using the shopt builtin, several extended pattern matching operators are recognized. pattern-list is a list of one or more patterns separated by a `|`.
+- `?(pattern-list)`: zero or one
+- `*(pattern-list)`: zero or more
+- `+(pattern-list)`: one or more
+- `@(pattern-list)`: one of the given patterns
+- `!(pattern-list)`: anything execpt one of the given patterns
+
+## Quote Removal
+After the preceding expansions, all unquoted occurrences of the characters `\`, `''`, and `"` that did not result from one of the above expansions are removed.
+
+# Redirection
+Note that the order of redirections is significant. `ls > dirlist 2>&1` directs both standard output (file descriptor 1) and standard error (file descriptor 2) to the file dirlist, while the command `ls 2>&1 > dirlist` directs only the standard output to file dirlist, because the standard error was made a copy of the standard output before the standard output was redirected to dirlist.
+- Redirecting Input `[n]<word`
+Redirection of input causes the file whose name results from the expansion of word to be opened for reading on file descriptor n, or the standard input (file descriptor 0) if n is not specified.
+- Redirecting Output `[n]>[|]word`
+If the redirection operator is `>|`: the redirection is attempted even if the file named by word exists
+- Appending Redirected Output `[n]>>word`
+- Redirecting Standard Output and Standard Error
+  - `&>word`: preffered
+  - `>&word`
+- Appending Standard Output and Standard Error `&>>word`
+
+## Here Documents `<<delimiter`, `<<-delimiter`
+This type of redirection instructs the shell to read input from the current source until a line containing only word (with no trailing blanks) is seen.
+  ```Shell
+  [n]<<[−]word
+      here-document
+  delimiter
+  ```
+No parameter and variable expansion, command substitution, arithmetic expansion, or filename expansion is performed on word.
+If the redirection operator is `<<-`, then all leading tab characters are stripped from input lines and the line containing delimiter. This allows here-documents within shell scripts to be indented in a natural fashion.
+
+A block of code or text which can be redirected to the command script or interactive program is called here document or HereDoc. So when the coder needs less amount of text data, then using code and data in the same file is a better option and it can be done easily by using here documents in a script.
+
+```Shell
+Command << HeredocDelimiter
+. . .
+. . .
+HeredocDelimiter
+```
+**ecample**
+
+```Shell
+#!/bin/bash
+#example.sh
+cat <<ADDTEXT
+This text is
+added by Here Document
+ADDTEXT
+```
+if we run the script using `bash example.sh`, the code will be executed anfd the text is echoed.\
+
+HereDoc uses ‘–‘ symbol to suppress any tab space from each line of heredoc text. When the script executes then all tab spaces are omitted from the starting of each line but it creates no effect on normal space.
+
+```Shell
+#!/bin/bash
+cat <<-ADDTEXT2
+  Line-1: Here Document is helpful to print short text
+  Line-2: Here Document can be used to format text
+  Line-3: Here Document can print variable within the text
+  Line-4: Here Document with '-' removes tab space from the line
+ADDTEXT2
+```
+Tabs will not be printed in the output.
+
+## Here Strings `<<<`
+A variant of here documents, the format is: `[n]<<< word`\
+- The word undergoes tilde expansion, parameter and variable expansion, command sub-stitution, arithmetic expansion, and quote removal.
+- **Pathname expansion** and **word splitting** are not performed.
+- The result is supplied as a single string, with a newline appended, to the command on its standard input
+
+```Shell
+var=$'hello world\nice cream\n\nhello beautiful\nhello viewwers!!!'
+echo "${var}" | grep 'hello' # this will run in subshell
+grep 'hello' "$var"  # doesnot work, $var will not expand
+
+grep 'hello' <<< "$var"
+grep 'hello' <<< "$(< data)"
+grep 'hello' <<< "$(cat data)"
+```
+# `mapfile` or `readarray`
+mapfile is a builtin command of the Bash shell. It reads lines from standard input into an indexed array variable. `readarray` is an alias to `mapfile`. These commands are not quite portable and the same purpose can be achived by `read` loop. However, mapfile is  faster.
+
+```Shell
+mapfile [-n count] [-O origin] [-s count] [-t] [-u fd]
+        [-C callback [-c quantum]] [array]
+```
 
 # `read`
 By default, read considers a newline character as the end of a line, but this can be changed using the `-d` option.
