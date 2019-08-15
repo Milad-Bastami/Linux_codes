@@ -581,7 +581,7 @@ A **named pipe**, also known as a **FIFO** (First In First Out, a concept in com
 With anonymous pipes, there's one reader and one writer, but that's not required with named pipes—any number of readers and writers may use the pipe.\
 Although the syntax is similar to shell redirection to a file, **we’re not actually writing anything to our disk**. Named pipes provide all of the computational benefits of pipes with the flexibility of interfacing with files.\
 However, creating and removing these file-like named pipes is a bit tedious. Pro grammers like syntactic shortcuts, so there’s a way to use named pipes without having to explicitly create them. This is called **process substitution**, or sometimes known as **anonymous named pipes**. These allow you to invoke a process, and have its standard output go directly to a named pipe. However, your shell treats this process substitution block like a file, so you can use it in commands as you would a regular file or named pipe: `cat <(echo "hello, process substitution")`.
-![Named pipes](named_pipes.png)
+![Naed pipes](/images/2019/08/named_pipes.png)
 
 ```Shell
 # capturing input stream
