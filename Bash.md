@@ -743,7 +743,7 @@ If parameter is null or unset, the expansion of word (or a message to that effec
   ```Shell
   # Remove all filenames in $PWD with "TXT" suffixes to a
   # "txt" suffix. For example, "file.TXT" becomes "file.txt"
-  SUFF=txt
+  SUFF=TXT
   suff=txt
 
   for i in $(ls *.$SUFF)
@@ -797,7 +797,10 @@ offsets start at zero, if you don't specify a length it goes to the end of the s
 
   # or
   i=-3
-  echo ${str:$-3:2} ## fg
+  echo ${str:$i:2} ## fg
+  
+  # the simple way: add a space
+  echo ${str: -3:2
  ```
 
  The length can also be negative which means from offset to the last minus the last characters specified by length:
@@ -907,11 +910,11 @@ echo "${foo@Q}"
 ```Shell
 $(command)
 or
-‘command‘
+`command`
 ```
 
 - **Embedded newlines** are not deleted, but they may be removed during word splitting.
-- If the substitution appears** within double quotes**, **word splitting and filename expansion are not performed** on the results.
+- If the substitution appears **within double quotes**, **word splitting and filename expansion are not performed** on the results.
 - Command substitutions may be **nested**. To nest when using the backquoted form, escape
 the inner backquotes with backslashes.
 - The command substitution `$(cat file)` can be replaced by the equivalent but **faster** `$(< file)`
