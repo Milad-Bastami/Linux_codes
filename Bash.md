@@ -77,7 +77,19 @@ There are **three quoting mechanisms**:
 3. Double Quotes `""`: reserves the literal value of all characters with the exception of `‘$’, ‘‘’, ‘\’`, and, when history expansion is enabled, `!`; A double quote may be quoted within double quotes by preceding it with a backslash.
 
 **Other Quotes:**
-- **ANSI-C Quoting**: `$'word'`: The word expands to string, with backslash-escaped characters replaced as specified by the ANSI C standard.
+- **ANSI-C Quoting**: `$'word'`: The word expands to string, with backslash-escaped characters replaced as specified by the ANSI C standard. It underestand backslashes (e.g. \n as newline).
+	``shell
+	echo "${v:-'ab\ncd'}"
+	# output: 'ab\ncd'
+	
+	echo "${v:-$'ab\ncd'}"
+	ab
+	cd
+	
+	echo $'ab\ncd'
+	ab
+	cd
+	```
 - **Locale-Specific Translation**: $"word": will cause the string to be translated according to the current locale. If the current locale is C or POSIX, the dollar sign is ignored. If the string is translated and replaced, the replacement is double-quoted.
 
 # Shell commands
