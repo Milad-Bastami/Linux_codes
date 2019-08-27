@@ -1353,7 +1353,8 @@ str="Not empty"; test -z "$str"; echo $?
 [[ $x -gt 5 && $x -lt 8 && $x -ne 6 ]]
 ```
 
-# Parsing bash script options with getopts
+# Parsing bash script options with `getopts`
+There ian alder but robust alternative to `getopts`, naming `getopts`. See https://mariusvw.com/2013/02/24/bash-getopt-versus-getopts/ for a comparison.  
 This tutorial explains how to use the `getopts` built-in function to parse arguments and options to a bash script.
 The getopts function takes three parameters:
 1. The first is a specification of **which options are valid**, listed as a sequence of letters. For example, the string `'ht'` signifies that the options -h and -t are valid.
@@ -1410,6 +1411,53 @@ while getopts ":hs:p:" arg; do
   esac
 done
 ```
+## Another getopts example
+based on a condition script would need mandatory option. For example, if argument to script is a directory, I will need to specify -R or -r option along with any other options (myscript -iR mydir or myscript -ir mydir or myscript -i -r mydir or myscript -i -R mydir), in case of file only -i is sufficient (myscript -i myfile).   
+You can concatenate the options you provide and getopts will separate them. You can set a flag when options are seen and check to make sure mandatory "options" (!) are present after the getopts loop has completed.
+
+```shell
+#!/bin/bash
+rflag=false
+small_r=false
+big_r=false
+
+usage () { echo "How to use"; }
+
+options=':ij:rRvh'
+while getopts $options option
+do
+    case "$option" in
+        i  ) i_func;;
+        j  ) j_arg=$OPTARG;;
+        r  ) rflag=true; small_r=true;;
+        R  ) rflag=true; big_r=true;;
+        v  ) v_func; other_func;;
+        h  ) usage; exit;;
+        \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
+        :  ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
+        *  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+
+if ((OPTIND == 1))
+then
+    echo "No options specified"
+fi
+
+shift $((OPTIND - 1))
+
+if (($# == 0))
+then
+    echo "No positional arguments specified"
+fi
+
+if ! $rflag && [[ -d $1 ]]
+then
+    echo "-r or -R must be included when a directory is specified" >&2
+    exit 1
+fi
+```
+
 # `tee`: Redirect output to multiple files or processes
 The tee command copies standard input to standard output and also to any files given as arguments. This is useful when you want not only to send some data down a pipe, but also to save a copy.
 - The tee command is useful when you happen to be transferring a large amount of data and also want to summarize that data without reading it a second time.
