@@ -592,3 +592,21 @@ program --in1 <(makein raw1.txt) --in2 <(makein raw2.txt) \
 program --in1 in1.txt --in2 in2.txt \
 --out1 >(gzip > out1.txt.gz) --out2 >(gzip > out2.txt.gz)
 ```
+
+# Chapter 8: R
+## split-apply-combine pattern: ```split() lapply() do.call(rbind, list)```
+
+```
+myList <- split(df, factor)  # split to a list
+myList.res <- lapply(myList, FUN) # apply FUN to the list
+do.call(rbind, myList.res) # combine using do.call
+```
+## split-apply-combine pattern: ```aggregate() tapply() by()```
+```
+aggregate(data, factors, FUN)
+aggregate(df[,c(2,3)], list(df[,1]), summary)
+tapply(data, factor, FUN)
+
+models <- with(data, by(data, factor, function(x) lm(response~predictor, data = x)))
+sapply(models, coef)
+```
