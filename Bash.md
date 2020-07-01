@@ -77,7 +77,19 @@ There are **three quoting mechanisms**:
 3. Double Quotes `""`: reserves the literal value of all characters with the exception of `‘$’, ‘‘’, ‘\’`, and, when history expansion is enabled, `!`; A double quote may be quoted within double quotes by preceding it with a backslash.
 
 **Other Quotes:**
-- **ANSI-C Quoting**: `$'word'`: The word expands to string, with backslash-escaped characters replaced as specified by the ANSI C standard.
+- **ANSI-C Quoting**: `$'word'`: The word expands to string, with backslash-escaped characters replaced as specified by the ANSI C standard. It underestand backslashes (e.g. \n as newline).
+	``shell
+	echo "${v:-'ab\ncd'}"
+	# output: 'ab\ncd'
+	
+	echo "${v:-$'ab\ncd'}"
+	ab
+	cd
+	
+	echo $'ab\ncd'
+	ab
+	cd
+	```
 - **Locale-Specific Translation**: $"word": will cause the string to be translated according to the current locale. If the current locale is C or POSIX, the dollar sign is ignored. If the string is translated and replaced, the replacement is double-quoted.
 
 # Shell commands
@@ -743,7 +755,7 @@ If parameter is null or unset, the expansion of word (or a message to that effec
   ```Shell
   # Remove all filenames in $PWD with "TXT" suffixes to a
   # "txt" suffix. For example, "file.TXT" becomes "file.txt"
-  SUFF=txt
+  SUFF=TXT
   suff=txt
 
   for i in $(ls *.$SUFF)
@@ -797,7 +809,10 @@ offsets start at zero, if you don't specify a length it goes to the end of the s
 
   # or
   i=-3
-  echo ${str:$-3:2} ## fg
+  echo ${str:$i:2} ## fg
+  
+  # the simple way: add a space
+  echo ${str: -3:2
  ```
 
  The length can also be negative which means from offset to the last minus the last characters specified by length:
@@ -907,11 +922,11 @@ echo "${foo@Q}"
 ```Shell
 $(command)
 or
-‘command‘
+`command`
 ```
 
 - **Embedded newlines** are not deleted, but they may be removed during word splitting.
-- If the substitution appears** within double quotes**, **word splitting and filename expansion are not performed** on the results.
+- If the substitution appears **within double quotes**, **word splitting and filename expansion are not performed** on the results.
 - Command substitutions may be **nested**. To nest when using the backquoted form, escape
 the inner backquotes with backslashes.
 - The command substitution `$(cat file)` can be replaced by the equivalent but **faster** `$(< file)`
@@ -1338,7 +1353,8 @@ str="Not empty"; test -z "$str"; echo $?
 [[ $x -gt 5 && $x -lt 8 && $x -ne 6 ]]
 ```
 
-# Parsing bash script options with getopts
+# Parsing bash script options with `getopts`
+There ian alder but robust alternative to `getopts`, naming `getopts`. See https://mariusvw.com/2013/02/24/bash-getopt-versus-getopts/ for a comparison.  
 This tutorial explains how to use the `getopts` built-in function to parse arguments and options to a bash script.
 The getopts function takes three parameters:
 1. The first is a specification of **which options are valid**, listed as a sequence of letters. For example, the string `'ht'` signifies that the options -h and -t are valid.
@@ -1395,6 +1411,53 @@ while getopts ":hs:p:" arg; do
   esac
 done
 ```
+## Another getopts example
+based on a condition script would need mandatory option. For example, if argument to script is a directory, I will need to specify -R or -r option along with any other options (myscript -iR mydir or myscript -ir mydir or myscript -i -r mydir or myscript -i -R mydir), in case of file only -i is sufficient (myscript -i myfile).   
+You can concatenate the options you provide and getopts will separate them. You can set a flag when options are seen and check to make sure mandatory "options" (!) are present after the getopts loop has completed.
+
+```shell
+#!/bin/bash
+rflag=false
+small_r=false
+big_r=false
+
+usage () { echo "How to use"; }
+
+options=':ij:rRvh'
+while getopts $options option
+do
+    case "$option" in
+        i  ) i_func;;
+        j  ) j_arg=$OPTARG;;
+        r  ) rflag=true; small_r=true;;
+        R  ) rflag=true; big_r=true;;
+        v  ) v_func; other_func;;
+        h  ) usage; exit;;
+        \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
+        :  ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
+        *  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+
+if ((OPTIND == 1))
+then
+    echo "No options specified"
+fi
+
+shift $((OPTIND - 1))
+
+if (($# == 0))
+then
+    echo "No positional arguments specified"
+fi
+
+if ! $rflag && [[ -d $1 ]]
+then
+    echo "-r or -R must be included when a directory is specified" >&2
+    exit 1
+fi
+```
+
 # `tee`: Redirect output to multiple files or processes
 The tee command copies standard input to standard output and also to any files given as arguments. This is useful when you want not only to send some data down a pipe, but also to save a copy.
 - The tee command is useful when you happen to be transferring a large amount of data and also want to summarize that data without reading it a second time.
